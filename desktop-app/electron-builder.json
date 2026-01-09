@@ -1,0 +1,47 @@
+{
+    "appId": "com.hiddencovenant.game",
+    "productName": "The Hidden Covenant",
+    "directories": {
+        "output": "release",
+        "buildResources": "build"
+    },
+    "files": [
+        "dist/**/*",
+        "dist-electron/**/*"
+    ],
+    "win": {
+        "target": [
+            {
+                "target": "nsis",
+                "arch": [
+                    "x64"
+                ]
+            }
+        ],
+        "icon": "build/icon.ico",
+        "artifactName": "${productName}-${version}-Setup.${ext}"
+    },
+    "mac": {
+        "target": [
+            "dmg"
+        ],
+        "icon": "build/icon.icns",
+        "category": "public.app-category.games",
+        "artifactName": "${productName}-${version}.${ext}"
+    },
+    "linux": {
+        "target": [
+            "AppImage",
+            "deb"
+        ],
+        "icon": "build/icon.png",
+        "category": "Game",
+        "artifactName": "${productName}-${version}.${ext}"
+    },
+    "nsis": {
+        "oneClick": false,
+        "allowToChangeInstallationDirectory": true,
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true
+    }
+}

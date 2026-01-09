@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Placeholder Generator</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        h1 { color: #10b981; }
+        button {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 10px 5px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        button:hover { background: #059669; }
+        .sound-item {
+            background: #2a2a2a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .status { color: #6b7280; font-size: 12px; }
+        .generated { color: #10b981; }
+    </style>
+</head>
+<body>
+    <h1>🎵 Audio Placeholder Generator</h1>
+    <p>Generate beep sound placeholders for The Hidden Covenant</p>
+    
+    <button onclick="generateAll()">Generate All Sounds</button>
+    <button onclick="downloadAll()">Download All (ZIP)</button>
+    
+    <div id="sounds"></div>
+
+    <script>
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const sounds = [
+            { name: 'ui-click', freq: 800, duration: 0.1 },
+            { name: 'ui-hover', freq: 600, duration: 0.05 },
+            { name: 'achievement-unlock', freq: [600, 800, 1000], duration: 0.5 },
+            { name: 'operation-complete', freq: 900, duration: 0.3 },
+            { name: 'quest-accept', freq: 700, duration: 0.2 },
+            { name: 'quest-complete', freq: [800, 1200], duration: 0.4 },
+            { name: 'quest-fail', freq: [400, 300], duration: 0.5 },
+            { name: 'threat-warning', freq: 500, duration: 0.3 },
+            { name: 'threat-critical', freq: [300, 200], duration: 0.6 },
+            { name: 'game-over', freq: [400, 200, 100], duration: 1.0 },
+            { name: 'resource-gain', freq: 1000, duration: 0.15 },
+            { name: 'resource-loss', freq: 400, duration: 0.2 },
+            { name: 'ambient-background', freq: [200, 300], duration: 3.0, loop: true },
+        ];
+
+        let generatedBlobs = {};
+
+        function generateBeep(frequencies, duration) {
+            const sampleRate = audioContext.sampleRate;
+            const numSamples = Math.floor(sampleRate * duration);
+            const buffer = audioContext.createBuffer(1, numSamples, sampleRate);
+            const data = buffer.getChannelData(0);
+
+            // Normalize if frequencies is not an array
+            const freqs = Array.isArray(frequencies) ? frequencies : [frequencies];
+
+            for (let i = 0; i < numSamples; i++) {
+                let sample = 0;
+                const time = i / sampleRate;
+                
+                // Add each frequency
+                freqs.forEach((freq, idx) => {
+                    const t = time - (idx * duration / freqs.length);
+                    if (t >= 0 && t < duration / freqs.length) {
+                        sample += Math.sin(2 * Math.PI * freq * t) * 0.3;
+                    }
+                });
+
+                // Apply envelope (fade in/out)
+                const envelope = Math.min(time * 10, (duration - time) * 10, 1);
+                data[i] = sample * envelope;
+            }
+
+            return buffer;
+        }
+
+        function bufferToWav(buffer) {
+            const numChannels = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const format = 1; // PCM
+            const bitDepth = 16;
+
+            const bytesPerSample = bitDepth / 8;
+            const blockAlign = numChannels * bytesPerSample;
+
+            const data = buffer.getChannelData(0);
+            const samples = new Int16Array(data.length);
+            for (let i = 0; i < data.length; i++) {
+                samples[i] = Math.max(-32768, Math.min(32767, data[i] * 32768));
+            }
+
+            const dataLength = samples.length * bytesPerSample;
+            const bufferLength = 44 + dataLength;
+            const arrayBuffer = new ArrayBuffer(bufferLength);
+            const view = new DataView(arrayBuffer);
+
+            // Write WAV header
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+
+            writeString(0, 'RIFF');
+            view.setUint32(4, bufferLength - 8, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, format, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * blockAlign, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitDepth, true);
+            writeString(36, 'data');
+            view.setUint32(40, dataLength, true);
+
+            // Write audio data
+            let offset = 44;
+            for (let i = 0; i < samples.length; i++) {
+                view.setInt16(offset, samples[i], true);
+                offset += 2;
+            }
+
+            return new Blob([arrayBuffer], { type: 'audio/wav' });
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function generateSound(sound) {
+            const buffer = generateBeep(sound.freq, sound.duration);
+            const blob = bufferToWav(buffer);
+            generatedBlobs[sound.name] = blob;
+            
+            const statusEl = document.getElementById(`status-${sound.name}`);
+            statusEl.textContent = 'Generated ✓';
+            statusEl.className = 'status generated';
+        }
+
+        function downloadSound(name) {
+            if (generatedBlobs[name]) {
+                downloadBlob(generatedBlobs[name], `${name}.wav`);
+            } else {
+                alert('Generate the sound first!');
+            }
+        }
+
+        function generateAll() {
+            sounds.forEach(sound => generateSound(sound));
+        }
+
+        async function downloadAll() {
+            if (Object.keys(generatedBlobs).length === 0) {
+                generateAll();
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            // Download each file individually (simple approach)
+            for (const [name, blob] of Object.entries(generatedBlobs)) {
+                downloadBlob(blob, `${name}.wav`);
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+        }
+
+        // Render sound list
+        const container = document.getElementById('sounds');
+        sounds.forEach(sound => {
+            const div = document.createElement('div');
+            div.className = 'sound-item';
+            div.innerHTML = `
+                <div>
+                    <strong>${sound.name}.wav</strong>
+                    <div class="status" id="status-${sound.name}">Not generated</div>
+                </div>
+                <div>
+                    <button onclick="generateSound(${JSON.stringify(sound).replace(/"/g, '&quot;')})">Generate</button>
+                    <button onclick="downloadSound('${sound.name}')">Download</button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    </script>
+</body>
+</html>

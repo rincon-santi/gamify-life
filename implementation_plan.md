@@ -1,49 +1,44 @@
-# Implementation Plan - The Hidden Covenant (MVP)
+# Implementation Plan - Map View (Domain of Influence)
 
-## Goal Description
-Build a "Paradox-style" grand strategy application to gamify real-life chores. The user acts as the Grandmaster of a Secret Society.
-**Platform Strategy**: We will build a **Desktop-First Web Application**.
--   **Why?**: Modern "Native" apps like Discord and VS Code are built with this exact stack.
--   **The Feel**: The app will NOT behave like a website. No scrolling, no browser context menus, fully immersive UI.
--   **Future Proof**: This codebase can be wrapped in **Tauri** or **Electron** later to become a true .exe application without rewriting logic.
+The "Map" will serve as a visual dashboard of the player's struggle, representing their life as a Sanctuary surrounded by the Void. It provides immediate, intuitive feedback on the state of Resources vs. Threats without relying on numbers.
+
+## Goal
+Create an immersive `MapView` component that visualizes the player's state with **high-end, premium abstract visuals**.
+
+**Visual Metaphors V2:**
+-   **THE SUN (Core):** Always present. Glow intensity driven by **Connection** (Light).
+-   **INFLUENCE (Richness):** Adds ornate golden structures/filigree hugging close to the sun.
+-   **ORDER (Planets):** High Order spawns orbiting planets/satellites.
+-   **ENTROPY (Fracture):** Violent line disruption, displacing the planets and breaking the ornate rings.
+-   **STAGNATION (Frost):** A creeping ice/vine texture that freezes the screen edges and slows time.
 
 ## User Review Required
 > [!IMPORTANT]
-> **Art Direction**: Victorian/Secret Society. Aesthetic: Dark wood, parchment, gold leaf, ink.
-> **Visuals**: Focus on **Data Visualization** (Graphs, Ledgers) and "Juicy" UI feedback (sound, distinct clicks) rather than particle overkill.
-> **Platform**: React/Vite (Web Tech) but styled and architected as a **Desktop Application**.
+> - **Planets:** Use smooth orbiting circles, not ticks.
+> - **Frost:** Use an SVG texture overlay for Stagnation.
+> - **Core:** Must feel solid and persistent.
 
 ## Proposed Changes
 
-### Tech Stack
--   **Framework**: React (Vite).
--   **Styling**: Tailwind CSS + **Radix UI** (for accessible, complex interactive primitives).
--   **Visualization**: **Recharts** (Graphs) + **Framer Motion** (Layout transitions).
--   **State**: Zustand + Immer + Persist.
+### Desktop App (`desktop-app/src`)
 
-### Project Structure (New)
-#### [NEW] [scaffold]
--   Setup Vite + React + TS.
--   **Critical**: Configure generic "Reset" CSS to remove all browser-like behaviors (scroll, select, touch highlight) to ensure "App-like" feel.
+#### [MODIFY] `src/presentation/views/MapView.tsx`
+- **Sun:** Base opacity 1.0. Glow radius scales with `Connection`.
+- **Planets (Order):** Render `N` circles orbiting at different radii based on `Order`.
+- **Filigree (Influence):** intricate SVG paths (spirograph style) near center.
+- **Stagnation Overlay:** A static SVG overlay with `mix-blend-overlay` white/blue texture that fades in.
+- **Entropy Filter:** Stronger `feTurbulence` + `feDisplacementMap` applied globally or to specific layers.
 
-### Core Components
-#### [NEW] [SocietyState]
--   Global store for Resources (Influence, Order, Connection) and Threats (Entropy, Stagnation, Solitude).
--   **Modifiers Engine**: The mathematical heart of the game.
-
-#### [NEW] [TheLedger] (Task List)
--   Draggable, sortable "Operations".
--   Right-click context menus (custom implementation, not browser default).
-
-#### [NEW] [MapRoom] (Dashboard)
--   Fixed-layout dashboard (Sidebar + Main View).
--   **Data-Dense**: Tooltips, sparklines, and progress bars everywhere.
+#### [MODIFY] `src/presentation/components/layout/Shell.tsx`
+- Import and render `MapView` when `view === 'MAP'`.
 
 ## Verification Plan
 
-### Automated Tests
--   Verify build using `npm run build`.
-
 ### Manual Verification
--   **"Immersion" Test**: Open the app in full screen (F11). Does it look like a website? If yes, it fails. It must look like a Game/App.
--   **Mechanic Test**: Verify resource modifiers stack correctly.
+1.  **Start Game:** Ensure Map defaults to "Ledger" (already done) but switch to "Map" to verify rendering.
+2.  **State Reaction:**
+    - Use console/devtools or gameplay to modify resources.
+    - Verify:
+        - Additional `INFLUENCE` -> Brighter Core.
+        - High `ENTROPY` -> Shield appears cracked/jittery.
+        - High `STAGNATION` -> Animations slow down.
