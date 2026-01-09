@@ -10,10 +10,7 @@ interface MainMenuProps {
 export function MainMenu({ onStart }: MainMenuProps) {
     const setDifficulty = useSocietyStore((s) => s.setDifficulty);
     const reset = useSocietyStore((s) => s.reset);
-    const history = useSocietyStore((s) => s.history);
-
-    // Check if a detailed history exists (more than initial) to enable Continue
-    const canContinue = history.length > 1;
+    const canContinue = useSocietyStore((s) => s.hasStarted());
 
     const [view, setView] = useState<'MAIN' | 'NEW_GAME'>('MAIN');
     const [selectedDiff, setSelectedDiff] = useState<Difficulty>('MEDIUM');

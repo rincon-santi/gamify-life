@@ -140,14 +140,14 @@ export function LedgerView() {
         // Logic for specific types (Type overrides or additions)
         if (draftType === 'QUEST' && draftTimeout) {
             updates.expiresAt = Date.now() + (parseInt(draftTimeout) * 60 * 1000);
-            updates.penalty = { threat: { ENTROPY: 10 * multiplier } };
+            updates.penalty = { threat: rewards.threatReduction ? { ...rewards.threatReduction } : undefined };
         } else {
             updates.expiresAt = undefined;
         }
 
         if (draftType === 'RITUAL' && draftRecurrence) {
             updates.recurrenceInterval = parseInt(draftRecurrence) * 60 * 60 * 1000;
-            updates.penalty = { threat: { STAGNATION: 10 * multiplier } };
+            updates.penalty = { threat: rewards.threatReduction ? { ...rewards.threatReduction } : undefined };
         } else {
             updates.recurrenceInterval = undefined;
         }
@@ -393,18 +393,20 @@ export function LedgerView() {
                             onDelete={() => deleteOperation(op.id)}
                         />
                         {/* Edit Button - Absolute on top using higher z-index and explicit positioning */}
-                        <div className="absolute top-2 right-10 z-50 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEditStart(op);
-                                }}
-                                className="p-1 text-muted-foreground hover:text-primary hover:bg-black/50 rounded backdrop-blur-sm"
-                                title="Edit Protocol"
-                            >
-                                <Edit2 className="size-4" />
-                            </button>
-                        </div>
+                        {(op.type !== 'QUEST' && op.type !== 'RITUAL') && (
+                            <div className="absolute top-2 right-10 z-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEditStart(op);
+                                    }}
+                                    className="p-1 text-muted-foreground hover:text-primary hover:bg-black/50 rounded backdrop-blur-sm"
+                                    title="Edit Protocol"
+                                >
+                                    <Edit2 className="size-4" />
+                                </button>
+                            </div>
+                        )}
 
                         {/* Type Badge */}
                         <div className="absolute top-2 left-2 z-20 pointer-events-none">

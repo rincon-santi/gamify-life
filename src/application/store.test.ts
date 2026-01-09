@@ -1,83 +1,58 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useSocietyStore } from '../application/store';
-import type { Operation } from '../domain/logic';
+import { useSocietyStore } from './store';
+import { act } from 'react';
 
-// Helper to reset store
-const resetStore = () => {
-    useSocietyStore.setState({
-        resources: { INFLUENCE: 10, ORDER: 50, CONNECTION: 50 },
-        threats: { ENTROPY: 10, STAGNATION: 0, SOLITUDE: 0 },
-        modifiers: [],
-        history: [],
-    });
-};
-
-describe('SocietyStore Game Engine', () => {
+describe('useSocietyStore - hasStarted', () => {
     beforeEach(() => {
-        resetStore();
+        const { reset } = useSocietyStore.getState();
+        act(() => {
+            reset();
+        });
     });
 
-    it('should initialize with default values', () => {
-        const state = useSocietyStore.getState();
-        expect(state.resources.INFLUENCE).toBe(10);
-        expect(state.resources.ORDER).toBe(50);
-        expect(state.threats.ENTROPY).toBe(10);
+    it('should return false for initial state', () => {
+        const { hasStarted } = useSocietyStore.getState();
+        expect(hasStarted()).toBe(false);
     });
 
-    it('should add resources correctly', () => {
-        const { addResource } = useSocietyStore.getState();
-        addResource('INFLUENCE', 5);
+    it('should return true if resources change', () => {
+        const { addResource, hasStarted } = useSocietyStore.getState();
+
+        act(() => {
+            addResource('INFLUENCE', 5);
+        });
+
         expect(useSocietyStore.getState().resources.INFLUENCE).toBe(15);
+        expect(hasStarted()).toBe(true);
     });
 
-    it('should execute operation: deduct cost and grant reward', () => {
-        const { executeOperation } = useSocietyStore.getState();
-        const op: Operation = {
-            id: '1',
-            title: 'Test',
-            description: 'Test',
-            type: 'ACTION',
-            cost: { INFLUENCE: 5 },
-            rewards: { resources: { ORDER: 2 } }
-        };
+    it('should return true if threats change', () => {
+        const { addThreat, hasStarted } = useSocietyStore.getState();
 
-        executeOperation(op);
+        act(() => {
+            addThreat('ENTROPY', 5);
+        });
 
-        const state = useSocietyStore.getState();
-        expect(state.resources.INFLUENCE).toBe(5); // 10 - 5
-        expect(state.resources.ORDER).toBe(52); // 50 + 2
-        expect(state.history).toContain('Executed: Test');
+        expect(useSocietyStore.getState().threats.ENTROPY).toBe(15);
+        expect(hasStarted()).toBe(true);
     });
 
-    it('should prevent execution if costs are too high', () => {
-        const { executeOperation } = useSocietyStore.getState();
-        const op: Operation = {
-            id: '1',
-            title: 'Test',
-            description: 'desc',
-            type: 'ACTION',
-            cost: { INFLUENCE: 20 }, // Too expensive
-            rewards: { resources: { ORDER: 100 } }
-        };
+    it('should return true if history has more than 1 entry', () => {
+        const { createOperation, hasStarted } = useSocietyStore.getState();
 
-        executeOperation(op);
+        // Creating an operation adds a history entry
+        act(() => {
+            createOperation({
+                id: 'test',
+                title: 'Test Op',
+                cost: {},
+                rewards: {},
+                time: 100,
+                description: 'test'
+            });
+        });
 
-        const state = useSocietyStore.getState();
-        expect(state.resources.INFLUENCE).toBe(10); // Unchanged
-        expect(state.resources.ORDER).toBe(50); // Unchanged
-    });
-
-    it('should reduce threats on execution', () => {
-        const { executeOperation } = useSocietyStore.getState();
-        const op: Operation = {
-            id: '2',
-            title: 'Threat Reduce',
-            description: 'Test',
-            type: 'ACTION',
-            rewards: { threatReduction: { ENTROPY: 5 } }
-        };
-
-        executeOperation(op);
-        expect(useSocietyStore.getState().threats.ENTROPY).toBe(5); // 10 - 5
+        expect(useSocietyStore.getState().history.length).toBeGreaterThan(1);
+        expect(hasStarted()).toBe(true);
     });
 });

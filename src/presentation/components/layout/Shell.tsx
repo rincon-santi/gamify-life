@@ -6,10 +6,14 @@ import { useSocietyStore } from "../../../application/store";
 import { ThreatMonitor } from "./ThreatMonitor";
 import { MainMenu } from "../../views/MainMenu";
 import { ReportModal } from "../modal/ReportModal";
+import { AchievementsPanel } from "../AchievementsPanel";
+import { Trophy } from "lucide-react";
+import { ArchivesView } from "../../views/ArchivesView";
 
 export function Shell() {
     const [view, setView] = useState<'MAP' | 'LEDGER' | 'ARCHIVES'>('MAP');
     const [gameStarted, setGameStarted] = useState(false);
+    const [showAchievements, setShowAchievements] = useState(false);
 
     const tick = useSocietyStore((s) => s.tick);
     const threats = useSocietyStore((s) => s.threats);
@@ -71,6 +75,15 @@ export function Shell() {
             <div className="flex flex-1 overflow-hidden">
                 <div className="flex flex-col w-64 border-r border-border/40 bg-black/60 backdrop-blur-md justify-between pb-4 transition-all">
                     <Navigation activeView={view} onViewChange={setView} />
+
+                    <button
+                        onClick={() => setShowAchievements(true)}
+                        className="mx-2 mb-2 flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:bg-white/5 hover:text-foreground transition-all duration-300 group"
+                    >
+                        <Trophy className="size-5 text-muted-foreground group-hover:text-yellow-500 transition-colors" />
+                        <span className="font-serif text-sm tracking-wide">Achievements</span>
+                    </button>
+
                     <div className="px-4 pb-4">
                         <ThreatMonitor />
                     </div>
@@ -83,15 +96,14 @@ export function Shell() {
                         </div>
                     )}
                     {view === 'LEDGER' && <LedgerView />}
-                    {view === 'ARCHIVES' && (
-                        <div className="flex items-center justify-center h-full text-muted-foreground font-serif italic text-xl">
-                            "History is written by the victors." (Archives Pending)
-                        </div>
-                    )}
+                    {view === 'ARCHIVES' && <ArchivesView />}
                 </div>
             </div>
 
             <ReportModal />
+            {/* Explicitly cast to any if needed or just rely on correct import - trying cleanly first */}
+            <AchievementsPanel isOpen={showAchievements} onClose={() => setShowAchievements(false)} />
         </div>
     );
 }
+

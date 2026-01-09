@@ -8,6 +8,7 @@ export function ReportModal() {
     const customOperations = useSocietyStore((s) => s.customOperations);
     const executeOperation = useSocietyStore((s) => s.executeOperation);
     const deleteOperation = useSocietyStore((s) => s.deleteOperation); // For expunging failed quests
+    const removeOperation = useSocietyStore((s) => s.removeOperation); // For removing completed quests
 
     const [isOpen, setIsOpen] = useState(false);
     const [pendingOp, setPendingOp] = useState<Operation | null>(null);
@@ -22,7 +23,7 @@ export function ReportModal() {
 
             // RITUAL: Check if enough time passed since last completion
             if (op.type === 'RITUAL' && op.recurrenceInterval) {
-                const lastDone = op.lastCompleted || 0; // If never done, effectively overdue immediately? Or give grace period?
+                const lastDone = op.lastCompleted || op.createdAt || 0;
                 // For MVP: If never done, assume it was due at creation?
                 // Let's say if (now - lastDone > recurrence)
                 // But if lastDone is 0 (1970), it's definitely overdue.
@@ -52,18 +53,19 @@ export function ReportModal() {
         if (pendingOp) {
             executeOperation(pendingOp);
             // If it was a Quest, it is now complete and should be removed from the active list
+            // Use removeOperation instead of deleteOperation to avoid applying penalties
             if (pendingOp.type === 'QUEST') {
-                deleteOperation(pendingOp.id);
+                removeOperation(pendingOp.id);
             }
         }
         setIsOpen(false);
     };
 
     const handleDeny = () => {
-        // Apply penalty
-        const addThreat = useSocietyStore.getState().addThreat;
-        if (pendingOp?.penalty?.threat) {
-            Object.entries(pendingOp.penalty.threat).forEach(([t, v]) => addThreat(t as any, v));
+        // Apply penalty with logging
+        if (pendingOp?.penalty) {
+            const applyPenalty = useSocietyStore.getState().applyPenalty;
+            applyPenalty(pendingOp.penalty, `Failed ${pendingOp.type}: ${pendingOp.title}`);
         }
 
         // If it was a Quest, it failed and is gone
