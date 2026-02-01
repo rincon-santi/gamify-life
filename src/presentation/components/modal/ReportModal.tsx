@@ -7,8 +7,8 @@ import type { Operation } from "../../../domain/logic";
 export function ReportModal() {
     const customOperations = useSocietyStore((s) => s.customOperations);
     const executeOperation = useSocietyStore((s) => s.executeOperation);
-    const deleteOperation = useSocietyStore((s) => s.deleteOperation); // For expunging failed quests
     const removeOperation = useSocietyStore((s) => s.removeOperation); // For removing completed quests
+    const failOperation = useSocietyStore((s) => s.failOperation);
 
     const [isOpen, setIsOpen] = useState(false);
     const [pendingOp, setPendingOp] = useState<Operation | null>(null);
@@ -62,27 +62,9 @@ export function ReportModal() {
     };
 
     const handleDeny = () => {
-        // Apply penalty with logging
-        if (pendingOp?.penalty) {
-            const applyPenalty = useSocietyStore.getState().applyPenalty;
-            applyPenalty(pendingOp.penalty, `Failed ${pendingOp.type}: ${pendingOp.title}`);
+        if (pendingOp) {
+            failOperation(pendingOp);
         }
-
-        // If it was a Quest, it failed and is gone
-        if (pendingOp?.type === 'QUEST') {
-            deleteOperation(pendingOp.id);
-        }
-
-        // If Ritual, do we reset timer? 
-        // Logic choice: yes, acknowledging failure resets the clock, otherwise it loops forever.
-        // We technically need to 'update' the timestamp without granting rewards.
-        // But our executeOperation grants rewards. 
-        // We might need a `failOperation` action or just hack it:
-        if (pendingOp?.type === 'RITUAL') {
-            // Update lastCompleted to now so we don't nag again immediately
-            useSocietyStore.getState().editOperation(pendingOp.id, { lastCompleted: Date.now() });
-        }
-
         setIsOpen(false);
     };
 

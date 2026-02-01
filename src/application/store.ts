@@ -108,6 +108,7 @@ interface SocietyState {
     deleteOperation: (id: string) => void;
     removeOperation: (id: string) => void;
     editOperation: (id: string, updates: Partial<Operation>) => void;
+    failOperation: (operation: Operation) => void;
     resolveEvent: (choiceId: string) => void; // [NEW] Handle event choices
     tick: () => void; // Run periodic updates
     processOfflineProgress: () => void;
@@ -279,6 +280,75 @@ export const useSocietyStore = create<SocietyState>()(
                             return;
                         }
                         Object.assign(op, updates);
+                    }
+                }),
+
+            failOperation: (operation: Operation) =>
+                set((state) => {
+                    const unappliedThreats: Partial<Record<ThreatType, number>> = {};
+                    const unappliedResources: Partial<Record<ResourceType, number>> = {};
+
+                    // 1. Apply Penalties
+                    if (operation.penalty) {
+                        // Apply threat penalties
+                        if (operation.penalty.threat) {
+                            const unapplied = applySafeThreatChange(state.threats, operation.penalty.threat);
+                            Object.assign(unappliedThreats, unapplied);
+                        }
+
+                        // Apply resource penalties
+                        if (operation.penalty.resource) {
+                            const unapplied = applyResourcePenalty(state.resources, operation.penalty.resource);
+                            Object.assign(unappliedResources, unapplied);
+                        }
+                    }
+
+                    // 2. Handle Operation Outcome
+                    if (operation.type === 'QUEST') {
+                        // Remove the quest
+                        if (state.customOperations) {
+                            const idx = state.customOperations.findIndex(o => o.id === operation.id);
+                            if (idx !== -1) {
+                                state.customOperations.splice(idx, 1);
+                            }
+                        }
+                        state.history.push(createHistoryEntry(`Failed Quest: ${operation.title}`, 'TASK'));
+                    } else if (operation.type === 'RITUAL') {
+                        // Reset timer
+                        if (state.customOperations) {
+                            const op = state.customOperations.find(o => o.id === operation.id);
+                            if (op) {
+                                op.lastCompleted = Date.now();
+                            }
+                        }
+                        state.history.push(createHistoryEntry(`Failed Ritual: ${operation.title}`, 'TASK'));
+                    } else {
+                        state.history.push(createHistoryEntry(`Failed Operation: ${operation.title}`, 'TASK'));
+                    }
+
+                    // 3. Log Unapplied Penalties
+                    const unappliedCount = Object.keys(unappliedThreats).length + Object.keys(unappliedResources).length;
+                    if (unappliedCount > 0) {
+                        const parts: string[] = [];
+
+                        if (Object.keys(unappliedThreats).length > 0) {
+                            const threatText = Object.entries(unappliedThreats)
+                                .map(([t, v]) => `${t}: ${v.toFixed(1)}`)
+                                .join(', ');
+                            parts.push(`Threats: ${threatText}`);
+                        }
+
+                        if (Object.keys(unappliedResources).length > 0) {
+                            const resourceText = Object.entries(unappliedResources)
+                                .map(([r, v]) => `${r}: ${v.toFixed(1)}`)
+                                .join(', ');
+                            parts.push(`Resources: ${resourceText}`);
+                        }
+
+                        state.history.push(createHistoryEntry(
+                            `Some penalties for failure couldn't be fully applied (already at limits): ${parts.join('; ')}`,
+                            'TASK'
+                        ));
                     }
                 }),
 
