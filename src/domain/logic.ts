@@ -29,6 +29,7 @@ export interface Operation {
     grantedModifiers?: Modifier[];
     cooldown?: number; // In seconds
     recurrenceInterval?: number; // In milliseconds (e.g. 24h)
+    duration?: number; // In milliseconds (for Quests/Rituals with time limits)
     lastCompleted?: number; // Timestamp
     penalty?: {
         threat?: Partial<Record<ThreatType, number>>;
