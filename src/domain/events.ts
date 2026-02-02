@@ -65,7 +65,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             threatReduction: { ENTROPY: 10 },
                             resources: { ORDER: 5 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 24, // 1 day
+                        duration: 1000 * 60 * 60 * 24, // 1 day
                     }
                 }
             },
@@ -100,7 +100,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { ORDER: 20 },
                             threatReduction: { ENTROPY: 15, STAGNATION: 5 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 48,
+                        duration: 1000 * 60 * 60 * 48,
                     }
                 }
             },
@@ -138,7 +138,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { ORDER: 20 },
                             threatReduction: { ENTROPY: 20 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 4,
+                        duration: 1000 * 60 * 60 * 4,
                     }
                 }
             },
@@ -175,7 +175,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { INFLUENCE: 10, ORDER: 5 },
                             threatReduction: { STAGNATION: 15 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 6,
+                        duration: 1000 * 60 * 60 * 6,
                     }
                 }
             },
@@ -213,7 +213,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { INFLUENCE: 15 },
                             threatReduction: { STAGNATION: 10 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 24,
+                        duration: 1000 * 60 * 60 * 24,
                     }
                 }
             },
@@ -248,7 +248,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { ORDER: 25 },
                             threatReduction: { ENTROPY: 20 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 24,
+                        duration: 1000 * 60 * 60 * 24,
                     }
                 }
             },
@@ -285,7 +285,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { CONNECTION: 15 },
                             threatReduction: { SOLITUDE: 10 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 12,
+                        duration: 1000 * 60 * 60 * 12,
                     }
                 }
             },
@@ -323,7 +323,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { CONNECTION: 25 },
                             threatReduction: { SOLITUDE: 20 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 24,
+                        duration: 1000 * 60 * 60 * 24,
                     }
                 }
             },
@@ -358,7 +358,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { ORDER: 25 },
                             threatReduction: { ENTROPY: 15 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 48,
+                        duration: 1000 * 60 * 60 * 48,
                     }
                 }
             },
@@ -396,7 +396,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { ORDER: 15 },
                             threatReduction: { ENTROPY: 10 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 72,
+                        duration: 1000 * 60 * 60 * 72,
                     }
                 }
             },
@@ -434,7 +434,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { ORDER: 20 },
                             threatReduction: { STAGNATION: 15 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 24,
+                        duration: 1000 * 60 * 60 * 24,
                     }
                 }
             },
@@ -469,7 +469,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { CONNECTION: 20 },
                             threatReduction: { SOLITUDE: 10 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 12,
+                        duration: 1000 * 60 * 60 * 12,
                     }
                 }
             },
@@ -506,7 +506,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { INFLUENCE: 50 },
                             threatReduction: { STAGNATION: 5 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 48,
+                        duration: 1000 * 60 * 60 * 48,
                     }
                 }
             },
@@ -541,7 +541,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { CONNECTION: 30, INFLUENCE: 10 },
                             threatReduction: { SOLITUDE: 15, ENTROPY: 5 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 72,
+                        duration: 1000 * 60 * 60 * 72,
                     }
                 }
             },

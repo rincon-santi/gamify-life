@@ -12,7 +12,7 @@ describe('useSocietyStore - Mechanics', () => {
     });
 
     it('should apply penalty of deleted Quest', () => {
-        const { createOperation, deleteOperation, getThreats } = useSocietyStore.getState();
+        const { createOperation, deleteOperation } = useSocietyStore.getState();
 
         // Setup a quest with penalty
         const quest: Operation = {
@@ -21,7 +21,7 @@ describe('useSocietyStore - Mechanics', () => {
             description: 'Do it or suffer',
             type: 'QUEST',
             penalty: { threat: { ENTROPY: 20 } },
-            created_at: Date.now()
+            createdAt: Date.now()
         };
 
         act(() => {
