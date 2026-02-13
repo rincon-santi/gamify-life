@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Edit2, Clock, Shield, Users, Crown, Coins, AlertCircle } from "lucide-react";
+import { Plus, Edit2, Clock, Shield, Users, Crown, AlertCircle } from "lucide-react";
 import type { Operation } from "../../domain/logic";
 import { OperationCard } from "../components/ledger/OperationCard";
 import { useSocietyStore } from "../../application/store";
@@ -68,7 +68,7 @@ export function LedgerView() {
 
     // Thematic Configuration
     const [draftAspect, setDraftAspect] = useState<'STABILITY' | 'COHESION' | 'AMBITION'>('STABILITY');
-    const [draftTreasury, setDraftTreasury] = useState<'NEUTRAL' | 'YIELD' | 'GRANT'>('NEUTRAL');
+
     const [draftImportance, setDraftImportance] = useState<'LOW' | 'MEDIUM' | 'HIGH'>('LOW');
 
 
@@ -78,7 +78,7 @@ export function LedgerView() {
         setDraftDuration({ days: "", hours: "", minutes: "" });
         setDraftType('ACTION');
         setDraftAspect('STABILITY');
-        setDraftTreasury('NEUTRAL');
+
         setDraftImportance('LOW');
         setEditingId(null);
         setIsDrafting(false);
@@ -90,7 +90,7 @@ export function LedgerView() {
         setDraftType(op.type || 'ACTION');
         // For editing, reset config to safe defaults
         setDraftAspect('STABILITY');
-        setDraftTreasury('NEUTRAL');
+
         setDraftImportance('LOW');
 
         // Reset duration on edit start (user sets new deadline/interval if needed)
@@ -124,22 +124,12 @@ export function LedgerView() {
                 rewards.threatReduction.SOLITUDE = 5 * multiplier;
                 break;
             case 'AMBITION':
-                // Pure stagnation focus, already handled by universal + type specifics potentially
+                rewards.resources.INFLUENCE = 5 * multiplier;
+                rewards.threatReduction.STAGNATION = 5 * multiplier;
                 break;
         }
 
-        // 2. Treasury Effects
-        switch (draftTreasury) {
-            case 'YIELD':
-                rewards.resources.INFLUENCE = 5 * multiplier;
-                break;
-            case 'GRANT':
-                cost.INFLUENCE = 2 * multiplier;
-                break;
-            case 'NEUTRAL':
-                // No change
-                break;
-        }
+
 
 
         const updates: Partial<Operation> = {
@@ -267,33 +257,7 @@ export function LedgerView() {
                             </div>
 
                             {/* Treasury Selector */}
-                            <div className="bg-black/20 border border-white/5 p-3 rounded-lg flex flex-col gap-2">
-                                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-                                    <Coins className="size-3" /> Treasury
-                                </label>
-                                <div className="flex flex-col gap-2 h-full">
-                                    {([
-                                        { id: 'YIELD', label: 'Yield', color: 'green-500', desc: 'Generates Influence upon completion.' },
-                                        { id: 'GRANT', label: 'Grant', color: 'red-500', desc: 'Costs Influence to perform (Simulates spending).' },
-                                        { id: 'NEUTRAL', label: 'Neutral', color: 'primary', desc: 'No Influence cost or gain.' }
-                                    ] as const).map(t => (
-                                        <button
-                                            key={t.id}
-                                            type="button"
-                                            onClick={() => setDraftTreasury(t.id as any)}
-                                            className={`relative p-2 rounded border text-xs font-bold uppercase transition-all flex items-center justify-between group/btn ${draftTreasury === t.id ? (t.id === 'YIELD' ? 'bg-green-500/20 border-green-500 text-green-500' : t.id === 'GRANT' ? 'bg-red-500/20 border-red-500 text-red-500' : 'bg-primary/20 border-primary text-primary') : 'border-white/5 text-muted-foreground hover:bg-white/5 hover:border-white/10'}`}
-                                        >
-                                            <span>{t.label}</span>
-                                            {draftTreasury === t.id && <div className={`size-1.5 rounded-full bg-${t.color === 'primary' ? 'primary' : t.color} shadow-[0_0_5px_currentColor]`} />}
 
-                                            {/* Hover Tooltip */}
-                                            <div className="absolute left-0 -top-10 bg-black border border-white/20 text-white text-[10px] p-2 rounded w-48 opacity-0 group-hover/btn:opacity-100 pointer-events-none transition-opacity z-50 shadow-xl">
-                                                {t.desc}
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
 
                             {/* Importance Selector */}
                             <div className="bg-black/20 border border-white/5 p-3 rounded-lg flex flex-col gap-2">
