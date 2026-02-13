@@ -61,10 +61,12 @@ describe('useSocietyStore - Partial Penalty Application', () => {
                         id: 'test_event',
                         title: 'Test Event',
                         description: 'Test',
+                        weight: 1,
                         choices: [
                             {
                                 id: 'reduce',
                                 label: 'Reduce',
+                                type: 'ACCEPT',
                                 outcome: {
                                     threatChange: { ENTROPY: -20 } // Would bring to -15, should cap at 0
                                 }
@@ -144,10 +146,12 @@ describe('useSocietyStore - Partial Penalty Application', () => {
                         id: 'debt_event',
                         title: 'Debt Event',
                         description: 'Test',
+                        weight: 1,
                         choices: [
                             {
                                 id: 'debt',
                                 label: 'Take Debt',
+                                type: 'ACCEPT',
                                 outcome: {
                                     resourceChange: { ORDER: -30 } // Should allow negative
                                 }

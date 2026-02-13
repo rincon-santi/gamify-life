@@ -45,9 +45,10 @@ describe('useSocietyStore - hasStarted', () => {
             createOperation({
                 id: 'test',
                 title: 'Test Op',
+                type: 'ACTION',
                 cost: {},
                 rewards: {},
-                time: 100,
+                createdAt: Date.now(),
                 description: 'test'
             });
         });

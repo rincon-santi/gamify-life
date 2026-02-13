@@ -1,5 +1,5 @@
 import React from "react";
-import { Map, BookOpen, Scroll } from "lucide-react";
+import { BookOpen, Scroll, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "../../../shared/utils";
 
@@ -17,8 +17,8 @@ export function Navigation({ activeView, onViewChange }: NavigationProps) {
             <div className="flex flex-col items-stretch gap-2 py-4 w-full px-2">
                 <NavButton
                     view="MAP"
-                    icon={Map}
-                    label="The Map Room"
+                    icon={Sparkles}
+                    label="The Sanctuary"
                     current={activeView}
                     onClick={() => onViewChange('MAP')}
                 />

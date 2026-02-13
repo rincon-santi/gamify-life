@@ -13,12 +13,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // App info
     getVersion: () => ipcRenderer.invoke('app:getVersion'),
+    openExternal: (url: string) => ipcRenderer.invoke('app:openExternal', url),
+    spotifyLogin: () => ipcRenderer.invoke('app:spotifyLogin'),
 
     // Window controls (if using custom titlebar)
     window: {
         minimize: () => ipcRenderer.send('window:minimize'),
         maximize: () => ipcRenderer.send('window:maximize'),
         close: () => ipcRenderer.send('window:close'),
+        toggleFullscreen: () => ipcRenderer.send('window:toggle-fullscreen'),
     },
 
     // Steam API (placeholder for now)
@@ -28,6 +31,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
             console.log('Steam achievement placeholder:', achievementId);
             return Promise.resolve(false);
         },
+    },
+
+    // Audio API
+    audio: {
+        getPlaylists: () => ipcRenderer.invoke('audio:get-playlists'),
     },
 });
 
@@ -40,14 +48,20 @@ export interface ElectronAPI {
         clear: () => Promise<boolean>;
     };
     getVersion: () => Promise<string>;
+    openExternal: (url: string) => Promise<void>;
+    spotifyLogin: () => Promise<void>;
     window: {
         minimize: () => void;
         maximize: () => void;
         close: () => void;
+        toggleFullscreen: () => void;
     };
     steam: {
         isAvailable: () => boolean;
         unlockAchievement: (achievementId: string) => Promise<boolean>;
+    };
+    audio: {
+        getPlaylists: () => Promise<{ playlists: Array<{ name: string; tracks: Array<{ name: string; path: string }> }>; debugInfo: string[] }>;
     };
 }
 

@@ -14,40 +14,42 @@ export function ReportModal() {
     const [pendingOp, setPendingOp] = useState<Operation | null>(null);
 
     useEffect(() => {
-        if (!customOperations) return;
-        const now = Date.now();
+        const checkForExpired = () => {
+            if (!customOperations) return;
+            const now = Date.now();
 
-        // Find the first actionable item
-        const overdueOp = customOperations.find(op => {
-            if (op.type === 'ACTION') return false;
+            // Find the first actionable item
+            const overdueOp = customOperations.find(op => {
+                if (op.type === 'ACTION') return false;
 
-            // RITUAL: Check if enough time passed since last completion
-            if (op.type === 'RITUAL' && op.recurrenceInterval) {
-                const lastDone = op.lastCompleted || op.createdAt || 0;
-                // For MVP: If never done, assume it was due at creation?
-                // Let's say if (now - lastDone > recurrence)
-                // But if lastDone is 0 (1970), it's definitely overdue.
-                // We might want to handle "Just Created" grace period elsewhere, but for now strict.
-                // Actually, if just created, lastCompleted is undefined. Users might not want instant nag.
-                // But technically a Ritual is a "Requirement".
-                return (now - lastDone) > op.recurrenceInterval;
+                // RITUAL: Check if enough time passed since last completion
+                if (op.type === 'RITUAL' && op.recurrenceInterval) {
+                    const lastDone = op.lastCompleted || op.createdAt || 0;
+                    return (now - lastDone) > op.recurrenceInterval;
+                }
+
+                // QUEST: Check if expired and NOT completed
+                if (op.type === 'QUEST' && op.expiresAt) {
+                    return now > op.expiresAt;
+                }
+
+                return false;
+            });
+
+            if (overdueOp && !isOpen) {
+                setPendingOp(overdueOp);
+                setIsOpen(true);
             }
+        };
 
-            // QUEST: Check if expired and NOT completed
-            if (op.type === 'QUEST' && op.expiresAt) {
-                // If expiresAt is in the past, and we haven't completed it (checked via some flag? or just existence?)
-                // If it's still in customOperations and expired, it's failed/pending check.
-                return now > op.expiresAt;
-            }
+        // Check immediately
+        checkForExpired();
 
-            return false;
-        });
+        // Check every second for real-time expiration detection
+        const interval = setInterval(checkForExpired, 1000);
 
-        if (overdueOp) {
-            setPendingOp(overdueOp);
-            setIsOpen(true);
-        }
-    }, [customOperations]);
+        return () => clearInterval(interval);
+    }, [customOperations, isOpen]);
 
     const handleConfirm = () => {
         if (pendingOp) {

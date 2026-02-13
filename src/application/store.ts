@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import { createStorage } from './storage';
 import type { ResourceType } from '../domain/resources';
 import type { ThreatType } from '../domain/threats';
 import type { Modifier, Operation } from '../domain/logic';
@@ -17,7 +18,7 @@ const createHistoryEntry = (text: string, type: HistoryType, details?: HistoryEn
 });
 
 // --- Constants ---
-const MAX_THREAT = 100;
+export const MAX_THREAT = 100;
 
 // --- Helper Functions ---
 
@@ -96,6 +97,7 @@ interface SocietyState {
     lastActiveTime: number;
     sessionStartTime: number; // For survival tracking
     difficulty: Difficulty;
+    hasRunStarted: boolean; // Explicit flag for active run
 
     // Actions
     setDifficulty: (diff: Difficulty) => void;
@@ -115,6 +117,14 @@ interface SocietyState {
     // Selectors / Helpers
     isGameOver: () => boolean;
     hasStarted: () => boolean;
+
+    // Tutorial State
+    isTutorialActive: boolean;
+    tutorialStep: number;
+    startTutorial: () => void;
+    endTutorial: () => void;
+    nextTutorialStep: () => void;
+    triggerMockEvent: (event: GameEvent) => void;
 }
 
 // --- Initial Values ---
@@ -125,7 +135,7 @@ const INITIAL_RESOURCES: Record<ResourceType, number> = {
 };
 
 const INITIAL_THREATS: Record<ThreatType, number> = {
-    ENTROPY: 10,
+    ENTROPY: 0,
     STAGNATION: 0,
     SOLITUDE: 0,
 };
@@ -144,10 +154,14 @@ export const useSocietyStore = create<SocietyState>()(
             lastActiveTime: Date.now(),
             sessionStartTime: Date.now(),
             difficulty: 'MEDIUM',
+            hasRunStarted: false, // Default to false until New Game started
+            isTutorialActive: false,
+            tutorialStep: 0,
 
             setDifficulty: (diff: Difficulty) => set((state) => { state.difficulty = diff }),
 
             reset: () => set((state) => {
+                state.resources = INITIAL_RESOURCES;
                 state.threats = INITIAL_THREATS;
                 state.modifiers = [];
                 state.customOperations = [];
@@ -156,6 +170,7 @@ export const useSocietyStore = create<SocietyState>()(
                 state.achievements = [];
                 state.lastActiveTime = Date.now();
                 state.sessionStartTime = Date.now();
+                state.hasRunStarted = true; // Mark run as started
                 // difficulty is set separately via UI before/after reset usually, 
                 // but we can leave it as is or reset to default. 
                 // Let's leave it, as setDifficulty usually happens during New Game flow.
@@ -368,12 +383,20 @@ export const useSocietyStore = create<SocietyState>()(
                         state.modifiers.push(...operation.grantedModifiers);
                     }
 
-                    // 4. Update recurrence/lastCompleted
-                    // If it's a custom operation in the store, we should update it there too so it persists 'lastCompleted'
+
+                    // 4. Update recurrence/lastCompleted OR Remove if it's a one-off quest
+                    // If it's a custom operation (Quest) in the store, we should remove it on completion
                     if (state.customOperations) {
-                        const customOp = state.customOperations.find(o => o.id === operation.id);
-                        if (customOp) {
-                            customOp.lastCompleted = Date.now();
+                        const customOpIndex = state.customOperations.findIndex(o => o.id === operation.id);
+                        if (customOpIndex !== -1) {
+                            // Only remove QUESTS (Single use). 
+                            // RITUALS and CUSTOM (Normal) tasks are reusable.
+                            if (operation.type === 'QUEST') {
+                                state.customOperations.splice(customOpIndex, 1);
+                            } else {
+                                // For others, update lastCompleted
+                                state.customOperations[customOpIndex].lastCompleted = Date.now();
+                            }
                         }
                     }
 
@@ -475,11 +498,19 @@ export const useSocietyStore = create<SocietyState>()(
                     // Random Event Trigger
                     // Only if no active event
                     if (!state.activeEvent) {
-                        // Rate: 1 check per tick (assumed 1s). 
-                        // Target: ~1 event every 5 minutes? = 1/300 = 0.003
-                        const BASE_EVENT_CHANCE = 0.003;
+                        // Dynamic Chance based on Threat Level
+                        // Base (Calm) = 0.0005 (~1 per 30 mins)
+                        // Max (Chaos) = 0.0035 (~1 per 5 mins)
 
-                        if (Math.random() < BASE_EVENT_CHANCE) {
+                        const totalThreat = Object.values(state.threats).reduce((a, b) => a + b, 0);
+                        const maxTotalThreat = MAX_THREAT * 3;
+                        const threatRatio = Math.min(1, totalThreat / maxTotalThreat);
+
+                        const BASE_CHANCE = 0.0005;
+                        const SCALED_CHANCE = 0.0030 * threatRatio;
+                        const CURRENT_CHANCE = BASE_CHANCE + SCALED_CHANCE;
+
+                        if (Math.random() < CURRENT_CHANCE) {
                             // Try to find a valid event
                             const validEvents = ALL_EVENTS.filter(e => {
                                 // Check conditions
@@ -511,18 +542,14 @@ export const useSocietyStore = create<SocietyState>()(
 
             hasStarted: () => {
                 const state = get();
-                // Check History
-                if (state.history.length > 1) return true;
-                // Check Achievements
+                // Simple check using the explicit flag
+                // Also check if we have any history/achievements just in case migration from old saves
+                if (state.hasRunStarted) return true;
+
+                // Fallback for legacy saves without the flag
+                if (state.history.length > 0) return true;
                 if (state.achievements.length > 0) return true;
-                // Check Resources
-                for (const [r, v] of Object.entries(state.resources)) {
-                    if (v !== INITIAL_RESOURCES[r as ResourceType]) return true;
-                }
-                // Check Threats
-                for (const [t, v] of Object.entries(state.threats)) {
-                    if (v !== INITIAL_THREATS[t as ThreatType]) return true;
-                }
+
                 return false;
             },
 
@@ -602,9 +629,28 @@ export const useSocietyStore = create<SocietyState>()(
                         }
                     });
                 }),
+
+            startTutorial: () => set((state) => {
+                state.isTutorialActive = true;
+                state.tutorialStep = 0;
+            }),
+
+            endTutorial: () => set((state) => {
+                state.isTutorialActive = false;
+                state.tutorialStep = 0;
+            }),
+
+            nextTutorialStep: () => set((state) => {
+                state.tutorialStep += 1;
+            }),
+
+            triggerMockEvent: (event: GameEvent) => set((state) => {
+                state.activeEvent = event;
+            }),
         })),
         {
             name: 'society-storage',
+            storage: createStorage(), // Use custom storage for Electron/Browser compatibility
             merge: (persistedState, currentState) => {
                 console.log("[Store] Merging state", persistedState);
                 if (!persistedState) return currentState;
@@ -645,7 +691,6 @@ export const useSocietyStore = create<SocietyState>()(
             },
             partialize: (state) => {
                 // Exclude functions and Actions from persistence
-                const { ...rest } = state;
                 // We should only persist data fields.
                 // However, state contains actions too.
                 // explicitly picking fields is safer:
@@ -660,7 +705,7 @@ export const useSocietyStore = create<SocietyState>()(
                     lastActiveTime: state.lastActiveTime,
                     sessionStartTime: state.sessionStartTime,
                     difficulty: state.difficulty
-                };
+                } as unknown as SocietyState;
             }
         }
     ));

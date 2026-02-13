@@ -2,6 +2,9 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { useSocietyStore, type Difficulty } from "../../application/store";
 import { cn } from "../../shared/utils";
+import { useAudio } from "../../application/AudioContext";
+import { AudioSettings } from "../components/AudioSettings";
+import { Settings, Sparkles } from "lucide-react";
 
 interface MainMenuProps {
     onStart: () => void;
@@ -10,16 +13,20 @@ interface MainMenuProps {
 export function MainMenu({ onStart }: MainMenuProps) {
     const setDifficulty = useSocietyStore((s) => s.setDifficulty);
     const reset = useSocietyStore((s) => s.reset);
+    const startTutorial = useSocietyStore((s) => s.startTutorial);
     const canContinue = useSocietyStore((s) => s.hasStarted());
+    const { playSound } = useAudio();
 
-    const [view, setView] = useState<'MAIN' | 'NEW_GAME'>('MAIN');
+    const [view, setView] = useState<'MAIN' | 'NEW_GAME' | 'SETTINGS'>('MAIN');
     const [selectedDiff, setSelectedDiff] = useState<Difficulty>('MEDIUM');
 
     const handleContinue = () => {
+        playSound('click');
         onStart();
     };
 
     const handleNewGameStart = () => {
+        playSound('click');
         reset();
         setDifficulty(selectedDiff);
         onStart();
@@ -58,13 +65,21 @@ export function MainMenu({ onStart }: MainMenuProps) {
                             )}
 
                             <button
-                                onClick={() => setView('NEW_GAME')}
+                                onClick={() => { playSound('click'); setView('NEW_GAME'); }}
                                 className={cn(
                                     "w-full hover:bg-white/5 hover:border-white/20 border border-transparent text-muted-foreground transition-all duration-300 font-serif tracking-widest uppercase flex flex-col items-center",
                                     canContinue ? "py-2 text-sm" : "bg-card/10 border-white/10 text-foreground py-4 px-8 text-lg hover:border-primary hover:bg-primary/20"
                                 )}
                             >
                                 <span>{canContinue ? "Begin New Lineage" : "Begin Lineage"}</span>
+                            </button>
+
+                            <button
+                                onClick={() => { playSound('click'); setView('SETTINGS'); }}
+                                className="w-full hover:bg-white/5 hover:border-white/20 border border-transparent text-muted-foreground transition-all duration-300 font-serif tracking-widest uppercase flex items-center justify-center gap-2 py-2 text-sm"
+                            >
+                                <Settings className="w-4 h-4" />
+                                <span>Settings</span>
                             </button>
                         </>
                     )}
@@ -99,16 +114,39 @@ export function MainMenu({ onStart }: MainMenuProps) {
 
                             <button
                                 onClick={handleNewGameStart}
-                                className="w-full bg-card/10 hover:bg-primary/20 hover:border-primary border border-white/10 text-foreground py-4 px-8 backdrop-blur-sm transition-all duration-300 font-serif text-lg tracking-widest uppercase flex flex-col items-center"
+                                className="w-full bg-card/10 hover:bg-primary/20 hover:border-primary border border-white/10 text-foreground py-3 px-8 backdrop-blur-sm transition-all duration-300 font-serif text-lg tracking-widest uppercase flex flex-col items-center"
                             >
                                 <span>Begin</span>
                             </button>
 
                             <button
-                                onClick={() => setView('MAIN')}
+                                onClick={() => {
+                                    startTutorial();
+                                    handleNewGameStart();
+                                }}
+                                className="w-full bg-card/5 hover:bg-primary/10 hover:border-primary/50 border border-white/5 text-muted-foreground hover:text-primary py-3 px-8 backdrop-blur-sm transition-all duration-300 font-serif text-sm tracking-widest uppercase flex items-center justify-center gap-2"
+                            >
+                                <Sparkles className="size-4" />
+                                <span>Begin with Guidance</span>
+                            </button>
+
+                            <button
+                                onClick={() => { playSound('click'); setView('MAIN'); }}
                                 className="text-xs text-muted-foreground hover:text-white uppercase tracking-widest"
                             >
                                 Cancel
+                            </button>
+                        </div>
+                    )}
+
+                    {view === 'SETTINGS' && (
+                        <div className="flex flex-col gap-6 w-96 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                            <AudioSettings />
+                            <button
+                                onClick={() => { playSound('click'); setView('MAIN'); }}
+                                className="text-xs text-muted-foreground hover:text-white uppercase tracking-widest"
+                            >
+                                Back
                             </button>
                         </div>
                     )}

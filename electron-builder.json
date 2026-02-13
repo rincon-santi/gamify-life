@@ -2,17 +2,26 @@
     "appId": "com.hiddencovenant.game",
     "productName": "The Hidden Covenant",
     "directories": {
-        "output": "release",
+        "output": "release_build",
         "buildResources": "build"
     },
     "files": [
         "dist/**/*",
         "dist-electron/**/*"
     ],
+    "asarUnpack": [
+        "dist/audio/**/*"
+    ],
     "win": {
         "target": [
             {
-                "target": "nsis",
+                "target": "zip",
+                "arch": [
+                    "x64"
+                ]
+            },
+            {
+                "target": "portable",
                 "arch": [
                     "x64"
                 ]

@@ -45,82 +45,96 @@ export interface GameEvent {
 const GENERIC_EVENTS: GameEvent[] = [
     // --- ENTROPY EVENTS (Chaos, Decay, Broken Things) ---
     {
-        id: 'evt_leaky_faucet',
-        title: "The Leaky Faucet",
-        description: "Drip. Drip. Drip. It's a minor annoyance now, but it threatens to rot the cabinet underneath.",
+        id: 'evt_stagnant_air',
+        title: "Stagnant Air",
+        description: "The room feels heavy. Dust motes dance in a sunbeam that struggles to reach the floor.",
         weight: 15,
+        triggerConditions: {
+            minThreat: { ENTROPY: 20 }
+        },
         choices: [
             {
-                id: 'c_fix_plumbing',
-                label: "Fix the plumbing",
+                id: 'c_open_window',
+                label: "Open a window",
                 type: 'ACCEPT',
                 outcome: {
                     grantOperation: {
-                        id: 'op_fix_plumbing',
-                        title: "Fix Plumbing",
-                        description: "Stop the dripping before it causes water damage.",
+                        id: 'op_fresh_air',
+                        title: "Let in Fresh Air",
+                        description: "Open windows, let the breeze in, breathe.",
                         type: 'QUEST',
-                        cost: { ORDER: 5 }, // "Energy" mapped to Order logic roughly, or just raw effort
+                        cost: { ORDER: 5 },
                         rewards: {
-                            threatReduction: { ENTROPY: 10 },
+                            threatReduction: { ENTROPY: 10, STAGNATION: 5 },
                             resources: { ORDER: 5 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 24, // 1 day
+                        // Generic duration: 4 hours
+                        expiresAt: Date.now() + 1000 * 60 * 60 * 4,
+                        penalty: {
+                            threat: { ENTROPY: 5 }
+                        }
                     }
                 }
             },
             {
-                id: 'c_ignore_leak',
-                label: "Put a bucket under it",
+                id: 'c_ignore_air',
+                label: "Ignore it",
                 type: 'IGNORE',
                 outcome: {
-                    threatChange: { ENTROPY: 5 }
+                    threatChange: { ENTROPY: 2.5 }
                 }
             }
         ]
     },
     {
-        id: 'evt_unopened_bill',
-        title: "The Unopened Bill",
-        description: "That envelope has been sitting on your desk for days. You know what's inside, but opening it feels like defeat.",
-        weight: 12,
+        id: 'evt_digital_noise',
+        title: "Digital Noise",
+        description: "A phantom vibration in your pocket. The screen calls to you, demanding attention.",
+        weight: 15,
+        triggerConditions: {
+            minThreat: { ENTROPY: 20 }
+        },
         choices: [
             {
-                id: 'c_sort_finances',
-                label: "Face it",
+                id: 'c_clear_mind',
+                label: "Clear the mind",
                 type: 'ACCEPT',
                 outcome: {
                     grantOperation: {
-                        id: 'op_sort_finances',
-                        title: "Sort Finances",
-                        description: "Open the bills, check accounts, organize paperwork.",
+                        id: 'op_meditate_moment',
+                        title: "Brief Meditation",
+                        description: "Close your eyes for 5 minutes. Silence the noise.",
                         type: 'QUEST',
                         cost: { ORDER: 5 },
                         rewards: {
-                            resources: { ORDER: 20 },
-                            threatReduction: { ENTROPY: 15, STAGNATION: 5 }
+                            resources: { ORDER: 15 },
+                            threatReduction: { ENTROPY: 10, STAGNATION: 5 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 48,
+                        expiresAt: Date.now() + 1000 * 60 * 60 * 2,
+                        penalty: {
+                            threat: { ENTROPY: 10 }
+                        }
                     }
                 }
             },
             {
-                id: 'c_ignore_bill',
-                label: "Maybe tomorrow",
+                id: 'c_check_phone',
+                label: "Check notifications",
                 type: 'REJECT',
                 outcome: {
-                    threatChange: { STAGNATION: 10, ENTROPY: 5 }
+                    threatChange: { STAGNATION: 5, ENTROPY: 0 }
                 }
             }
         ]
     },
+
     {
         id: 'evt_lost_keys',
         title: "The Lost Keys",
         description: "You're ready to leave, but your keys are gone. The clutter has claimed them.",
         weight: 15,
         triggerConditions: {
-            minThreat: { ENTROPY: 30 } // Only happens if things are getting messy
+            minThreat: { ENTROPY: 10 } // Low threshold so it happens often, but mainly when messy
         },
         choices: [
             {
@@ -139,6 +153,9 @@ const GENERIC_EVENTS: GameEvent[] = [
                             threatReduction: { ENTROPY: 20 }
                         },
                         expiresAt: Date.now() + 1000 * 60 * 60 * 4,
+                        penalty: {
+                            threat: { ENTROPY: 25 }
+                        }
                     }
                 }
             },
@@ -147,7 +164,173 @@ const GENERIC_EVENTS: GameEvent[] = [
                 label: "Stay home",
                 type: 'REJECT',
                 outcome: {
-                    threatChange: { SOLITUDE: 5, STAGNATION: 5 }
+                    threatChange: { SOLITUDE: 2.5, STAGNATION: 2.5 }
+                }
+            }
+        ]
+    },
+    {
+        id: 'evt_mystery_cable',
+        title: "The Mystery Cable",
+        description: "You found a USB cable in a drawer. You have no idea what device it charges, but you're afraid to throw it away.",
+        weight: 12,
+        triggerConditions: {
+            minThreat: { ENTROPY: 15 }
+        },
+        choices: [
+            {
+                id: 'c_organize_tech',
+                label: "Organize the tech drawer",
+                type: 'ACCEPT',
+                outcome: {
+                    grantOperation: {
+                        id: 'op_tech_sort',
+                        title: "Cable Management",
+                        description: "Test the cables. Label them. Throw out the e-waste.",
+                        type: 'QUEST',
+                        cost: { ORDER: 5 },
+                        rewards: {
+                            resources: { ORDER: 15 },
+                            threatReduction: { ENTROPY: 10 }
+                        },
+                        expiresAt: Date.now() + 1000 * 60 * 60 * 24,
+                        penalty: {
+                            threat: { ENTROPY: 5 }
+                        }
+                    }
+                }
+            },
+            {
+                id: 'c_keep_cable',
+                label: "Put it back 'just in case'",
+                type: 'IGNORE',
+                outcome: {
+                    threatChange: { ENTROPY: 2 }
+                }
+            }
+        ]
+    },
+    {
+        id: 'evt_fridge_shadow',
+        title: "The Fridge Archeology",
+        description: "There is a tupperware container in the back of the fridge. The contents are no longer recognizable as food.",
+        weight: 15,
+        triggerConditions: {
+            minThreat: { ENTROPY: 20 }
+        },
+        choices: [
+            {
+                id: 'c_purge_fridge',
+                label: "Purge the fridge",
+                type: 'ACCEPT',
+                outcome: {
+                    grantOperation: {
+                        id: 'op_fridge_clean',
+                        title: "Fridge Purge",
+                        description: "Brave the smell. Throw it out. Wash the shelves.",
+                        type: 'QUEST',
+                        cost: { ORDER: 10 },
+                        rewards: {
+                            resources: { ORDER: 10 },
+                            threatReduction: { ENTROPY: 15 }
+                        },
+                        expiresAt: Date.now() + 1000 * 60 * 60 * 2,
+                        penalty: {
+                            threat: { ENTROPY: 10 }
+                        }
+                    }
+                }
+            },
+            {
+                id: 'c_close_door',
+                label: "Close the door gently",
+                type: 'REJECT',
+                outcome: {
+                    threatChange: { ENTROPY: 5 }
+                }
+            }
+        ]
+    },
+    {
+        id: 'evt_chair_wardrobe',
+        title: "The Chair Wardrobe",
+        description: "That one chair in the corner is no longer visible. It has been consumed by a pile of 'not quite dirty, not quite clean' clothes.",
+        weight: 18,
+        triggerConditions: {
+            minThreat: { ENTROPY: 15 }
+        },
+        choices: [
+            {
+                id: 'c_fold_laundry',
+                label: "Reclaim the chair",
+                type: 'ACCEPT',
+                outcome: {
+                    grantOperation: {
+                        id: 'op_laundry_mountain',
+                        title: "Conquer the Laundry",
+                        description: "Fold, hang, or wash. Just clear the chair.",
+                        type: 'QUEST',
+                        cost: { ORDER: 8 },
+                        rewards: {
+                            resources: { ORDER: 15 },
+                            threatReduction: { ENTROPY: 10 }
+                        },
+                        expiresAt: Date.now() + 1000 * 60 * 60 * 24,
+                        penalty: {
+                            threat: { ENTROPY: 5 }
+                        }
+                    }
+                }
+            },
+            {
+                id: 'c_add_shirt',
+                label: "Add another shirt",
+                type: 'IGNORE',
+                outcome: {
+                    threatChange: { ENTROPY: 2.5 }
+                }
+            }
+        ]
+    },
+
+    {
+        id: 'evt_paperwork_pile',
+        title: "The Unopened Ledger",
+        description: "Receipts, tax forms, and unread mail. The pile on the desk has grown taller than the lamp.",
+        weight: 15,
+        triggerConditions: {
+            minThreat: { ENTROPY: 25 }
+        },
+        choices: [
+            {
+                id: 'c_do_taxes',
+                label: "Sort the finances",
+                type: 'ACCEPT',
+                outcome: {
+                    grantOperation: {
+                        id: 'op_financial_audit',
+                        title: "Financial Audit",
+                        description: "Categorize expenses, pay bills, file the documents.",
+                        type: 'QUEST',
+                        cost: { ORDER: 10 },
+                        rewards: {
+                            resources: { INFLUENCE: 5, ORDER: 5 }, // Lowered gains
+                            threatReduction: { ENTROPY: 30 } // Increased reduction
+                        },
+                        // 6 hours
+                        expiresAt: Date.now() + 1000 * 60 * 60 * 6,
+                        penalty: {
+                            threat: { ENTROPY: 10 }
+                        }
+                    }
+                }
+            },
+            {
+                id: 'c_add_receipt',
+                label: "Put a book on top",
+                type: 'IGNORE',
+                outcome: {
+                    threatChange: { ENTROPY: 2.5 }
                 }
             }
         ]
@@ -155,109 +338,166 @@ const GENERIC_EVENTS: GameEvent[] = [
 
     // --- STAGNATION EVENTS (Boredom, Lack of Growth, Procrastination) ---
     {
-        id: 'evt_doomscrolling',
-        title: "The Doomscrolling Spiral",
-        description: "You sat down for a minute, but two hours have passed. Your brain feels foggy.",
-        weight: 20,
+        id: 'evt_wiki_hole',
+        title: "The Wikipedia Rabbit Hole",
+        description: "You looked up 'cheese' 3 hours ago. You are now reading about the Defenestration of Prague. How did you get here?",
+        weight: 15,
+        triggerConditions: {
+            minThreat: { STAGNATION: 15 }
+        },
         choices: [
             {
-                id: 'c_digital_detox',
-                label: "Digital Detox Evening",
+                id: 'c_snap_out',
+                label: "Snap out of it",
                 type: 'ACCEPT',
                 outcome: {
                     grantOperation: {
-                        id: 'op_digital_detox',
-                        title: "Digital Detox",
-                        description: "Put the phone away and do something analog.",
+                        id: 'op_focus_sprint',
+                        title: "Focus Sprint",
+                        description: "Close all 47 tabs. do one productive thing for 15 mins.",
                         type: 'QUEST',
-                        cost: { CONNECTION: 5 }, // Missing out on chats
+                        cost: { ORDER: 5 },
                         rewards: {
-                            resources: { INFLUENCE: 10, ORDER: 5 },
-                            threatReduction: { STAGNATION: 15 }
+                            resources: { ORDER: 10, INFLUENCE: 5 },
+                            threatReduction: { STAGNATION: 10 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 6,
+                        expiresAt: Date.now() + 1000 * 60 * 60 * 1,
+                        penalty: {
+                            threat: { STAGNATION: 5 }
+                        }
                     }
                 }
             },
             {
-                id: 'c_keep_scrolling',
-                label: "Just one more video",
+                id: 'c_one_more_link',
+                label: "Click one more link",
                 type: 'IGNORE',
                 outcome: {
-                    threatChange: { STAGNATION: 10, ENTROPY: 5 }
+                    threatChange: { STAGNATION: 2.5 }
                 }
             }
         ]
     },
     {
-        id: 'evt_forgotten_goal',
-        title: "The Forgotten Goal",
-        description: "You remember that thing you wanted to learn. The books are still unread, the plan still unmade.",
-        weight: 10,
+        id: 'evt_creative_itch',
+        title: "The Creative Itch",
+        description: "A sudden desire to make something. Anything. Your hands feel restless.",
+        weight: 20,
         triggerConditions: {
             minThreat: { STAGNATION: 20 }
         },
         choices: [
             {
-                id: 'c_start_learning',
-                label: "Start small",
+                id: 'c_sketch_write',
+                label: "Create something small",
                 type: 'ACCEPT',
                 outcome: {
                     grantOperation: {
-                        id: 'op_learning_session',
-                        title: "30-Minute Learning Session",
-                        description: "Pick up that book, watch that tutorial, or practice that skill.",
+                        id: 'op_quick_creation',
+                        title: "Quick Creation",
+                        description: "Doodle, write a paragraph, hum a tune.",
                         type: 'QUEST',
                         cost: { ORDER: 5 },
                         rewards: {
-                            resources: { INFLUENCE: 15 },
-                            threatReduction: { STAGNATION: 10 }
+                            resources: { INFLUENCE: 10 },
+                            threatReduction: { STAGNATION: 15 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 24,
+                        expiresAt: Date.now() + 1000 * 60 * 60 * 6,
+                        penalty: {
+                            threat: { STAGNATION: 10 }
+                        }
                     }
                 }
             },
             {
-                id: 'c_no_time',
-                label: "I don't have time",
+                id: 'c_consume_media',
+                label: "Watch something instead",
                 type: 'IGNORE',
                 outcome: {
-                    threatChange: { STAGNATION: 10 }
+                    threatChange: { STAGNATION: 5 }
                 }
             }
         ]
     },
     {
-        id: 'evt_mirror_moment',
-        title: "The Mirror Moment",
-        description: "Your body has been sending signals - poor sleep, low energy, aches you ignore. It's time to listen.",
-        weight: 8,
+        id: 'evt_foggy_mind',
+        title: "The Fog",
+        description: "Thoughts are moving through sludge. You've been sitting too long.",
+        weight: 15,
+        triggerConditions: {
+            minThreat: { STAGNATION: 30 }
+        },
         choices: [
             {
-                id: 'c_prioritize_health',
-                label: "Prioritize health",
+                id: 'c_stretch',
+                label: "Stand up and stretch",
                 type: 'ACCEPT',
                 outcome: {
                     grantOperation: {
-                        id: 'op_movement_session',
-                        title: "Movement Session",
-                        description: "Go for a walk, stretch, exercise - anything to get moving.",
+                        id: 'op_stretch_break',
+                        title: "Stretch Break",
+                        description: "Get the blood flowing. 5 minutes.",
                         type: 'QUEST',
-                        cost: { ORDER: 10 },
+                        cost: { ORDER: 5 },
                         rewards: {
-                            resources: { ORDER: 25 },
-                            threatReduction: { ENTROPY: 20 }
+                            resources: { ORDER: 10 },
+                            threatReduction: { STAGNATION: 10 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 24,
+                        expiresAt: Date.now() + 1000 * 60 * 60 * 2,
+                        penalty: {
+                            threat: { STAGNATION: 10 }
+                        }
                     }
                 }
             },
             {
-                id: 'c_start_monday',
-                label: "I'll start Monday",
+                id: 'c_sit_still',
+                label: "Stay seated",
                 type: 'REJECT',
                 outcome: {
-                    threatChange: { ENTROPY: 15 }
+                    threatChange: { STAGNATION: 5 }
+                }
+            }
+        ]
+    },
+
+    {
+        id: 'evt_time_loop',
+        title: "The Loop",
+        description: "Monday feels like Tuesday. Tuesday feels like last week. The days are blurring into a single grey smear.",
+        weight: 15,
+        triggerConditions: {
+            minThreat: { STAGNATION: 25 }
+        },
+        choices: [
+            {
+                id: 'c_break_pattern',
+                label: "Break the pattern",
+                type: 'ACCEPT',
+                outcome: {
+                    grantOperation: {
+                        id: 'op_new_experience',
+                        title: "Novelty Injection",
+                        description: "Go somewhere new. Eat something different. Break the script.",
+                        type: 'QUEST',
+                        cost: { ORDER: 5 },
+                        rewards: {
+                            resources: { INFLUENCE: 10, CONNECTION: 5 },
+                            threatReduction: { STAGNATION: 20 }
+                        },
+                        expiresAt: Date.now() + 1000 * 60 * 60 * 12,
+                        penalty: {
+                            threat: { STAGNATION: 10 }
+                        }
+                    }
+                }
+            },
+            {
+                id: 'c_let_it_blur',
+                label: "Let it blur",
+                type: 'IGNORE',
+                outcome: {
+                    threatChange: { STAGNATION: 5 }
                 }
             }
         ]
@@ -265,292 +505,165 @@ const GENERIC_EVENTS: GameEvent[] = [
 
     // --- SOLITUDE EVENTS (Isolation, Loneliness) ---
     {
-        id: 'evt_ghosted_message',
-        title: "The Unanswered Message",
-        description: "You realize you never replied to that friend who reached out last week.",
+        id: 'evt_sudden_silence',
+        title: "Sudden Silence",
+        description: "The background noise stops. The quiet is sudden and sharp.",
         weight: 15,
+        triggerConditions: {
+            minThreat: { SOLITUDE: 25 }
+        },
         choices: [
             {
-                id: 'c_reply_late',
-                label: "Better late than never",
+                id: 'c_send_text',
+                label: "Reach out to someone",
                 type: 'ACCEPT',
                 outcome: {
                     grantOperation: {
-                        id: 'op_catch_up',
-                        title: "Catch-up Call",
-                        description: "Apologize and reconnect.",
+                        id: 'op_check_in',
+                        title: "Send a Message",
+                        description: "Just a 'thinking of you' generic text.",
                         type: 'QUEST',
                         cost: { INFLUENCE: 5 },
                         rewards: {
-                            resources: { CONNECTION: 15 },
+                            resources: { CONNECTION: 10 },
                             threatReduction: { SOLITUDE: 10 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 12,
+                        expiresAt: Date.now() + 1000 * 60 * 60 * 4,
+                        penalty: {
+                            threat: { SOLITUDE: 10 }
+                        }
                     }
                 }
             },
             {
-                id: 'c_too_awkward',
-                label: "It's too awkward now",
+                id: 'c_dwell',
+                label: "Dwell in it",
                 type: 'REJECT',
                 outcome: {
-                    threatChange: { SOLITUDE: 10 }
+                    threatChange: { SOLITUDE: 5 }
                 }
             }
         ]
     },
     {
-        id: 'evt_empty_weekend',
-        title: "The Empty Weekend",
-        description: "Friday night arrives. You have zero plans and the silence is loud.",
+        id: 'evt_echo_chamber',
+        title: "The Echo Chamber",
+        description: "You haven't heard a human voice in hours. Only your own thoughts bouncing around.",
         weight: 12,
         triggerConditions: {
             minThreat: { SOLITUDE: 40 }
         },
         choices: [
             {
-                id: 'c_find_event',
-                label: "Go to a local meetup",
+                id: 'c_human_voice',
+                label: "Listen to something",
                 type: 'ACCEPT',
                 outcome: {
                     grantOperation: {
-                        id: 'op_meetup',
-                        title: "Attend Meetup",
-                        description: "Force yourself to go out and meet people.",
+                        id: 'op_podcast_call',
+                        title: "Hear a Voice",
+                        description: "Call someone or listen to a conversational podcast.",
+                        type: 'QUEST',
+                        cost: { INFLUENCE: 5 },
+                        rewards: {
+                            resources: { CONNECTION: 15 },
+                            threatReduction: { SOLITUDE: 15 }
+                        },
+                        expiresAt: Date.now() + 1000 * 60 * 60 * 6,
+                        penalty: {
+                            threat: { SOLITUDE: 15 }
+                        }
+                    }
+                }
+            },
+            {
+                id: 'c_stay_quiet',
+                label: "Stay in the quiet",
+                type: 'REJECT',
+                outcome: {
+                    threatChange: { SOLITUDE: 7.5 }
+                }
+            }
+        ]
+    },
+    {
+        id: 'evt_phantom_vibration',
+        title: "The Phantom Vibration",
+        description: "You checked your phone. No one messaged. The silence is digital now, too.",
+        weight: 15,
+        triggerConditions: {
+            minThreat: { SOLITUDE: 15 }
+        },
+        choices: [
+            {
+                id: 'c_initiate',
+                label: "Initiate contact",
+                type: 'ACCEPT',
+                outcome: {
+                    grantOperation: {
+                        id: 'op_send_first',
+                        title: "Send First",
+                        description: "Don't wait for them. Send the meme. Say hello.",
+                        type: 'QUEST',
+                        cost: { INFLUENCE: 5 },
+                        rewards: {
+                            resources: { CONNECTION: 15 },
+                            threatReduction: { SOLITUDE: 10 }
+                        },
+                        expiresAt: Date.now() + 1000 * 60 * 60 * 4,
+                        penalty: {
+                            threat: { SOLITUDE: 5 }
+                        }
+                    }
+                }
+            },
+            {
+                id: 'c_put_away',
+                label: "Put it away",
+                type: 'REJECT',
+                outcome: {
+                    threatChange: { SOLITUDE: 5 }
+                }
+            }
+        ]
+    },
+    {
+        id: 'evt_crowded_room',
+        title: "The Empty Chair",
+        description: "You're doing something you enjoy, but you suddenly notice the empty space where someone else could be.",
+        weight: 12,
+        triggerConditions: {
+            minThreat: { SOLITUDE: 30 }
+        },
+        choices: [
+            {
+                id: 'c_invite',
+                label: "Invite someone",
+                type: 'ACCEPT',
+                outcome: {
+                    grantOperation: {
+                        id: 'op_host_hangout',
+                        title: "Host",
+                        description: "Invite someone over. Or meet them out.",
                         type: 'QUEST',
                         cost: { INFLUENCE: 10 },
                         rewards: {
                             resources: { CONNECTION: 25 },
                             threatReduction: { SOLITUDE: 20 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 24,
-                    }
-                }
-            },
-            {
-                id: 'c_stay_in',
-                label: "Stay in",
-                type: 'REJECT',
-                outcome: {
-                    threatChange: { SOLITUDE: 15 }
-                }
-            }
-        ]
-    },
-    {
-        id: 'evt_messy_inbox',
-        title: "The Messy Inbox",
-        description: "347 unread emails. Digital clutter is real clutter, and it's drowning you.",
-        weight: 15,
-        choices: [
-            {
-                id: 'c_inbox_zero',
-                label: "Unsubscribe spree",
-                type: 'ACCEPT',
-                outcome: {
-                    grantOperation: {
-                        id: 'op_inbox_sprint',
-                        title: "Inbox Zero Sprint",
-                        description: "Unsubscribe from junk, archive old emails, achieve clarity.",
-                        type: 'QUEST',
-                        cost: { ORDER: 10 },
-                        rewards: {
-                            resources: { ORDER: 25 },
-                            threatReduction: { ENTROPY: 15 }
-                        },
                         expiresAt: Date.now() + 1000 * 60 * 60 * 48,
+                        penalty: {
+                            threat: { SOLITUDE: 10 }
+                        }
                     }
                 }
             },
             {
-                id: 'c_mark_read',
-                label: "Mark all as read",
+                id: 'c_enjoy_solitude',
+                label: "Enjoy the space",
                 type: 'IGNORE',
                 outcome: {
-                    threatChange: { ENTROPY: 8 }
-                }
-            }
-        ]
-    },
-    {
-        id: 'evt_overdue_checkup',
-        title: "The Overdue Checkup",
-        description: "When was your last dentist appointment? Doctor visit? You've been putting it off.",
-        weight: 10,
-        triggerConditions: {
-            minThreat: { ENTROPY: 25 }
-        },
-        choices: [
-            {
-                id: 'c_schedule_appointment',
-                label: "Make the call",
-                type: 'ACCEPT',
-                outcome: {
-                    grantOperation: {
-                        id: 'op_schedule_checkup',
-                        title: "Schedule Appointments",
-                        description: "Book that dentist, doctor, or any other checkup you've been avoiding.",
-                        type: 'QUEST',
-                        cost: { INFLUENCE: 5 },
-                        rewards: {
-                            resources: { ORDER: 15 },
-                            threatReduction: { ENTROPY: 10 }
-                        },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 72,
-                    }
-                }
-            },
-            {
-                id: 'c_feel_fine',
-                label: "I feel fine",
-                type: 'REJECT',
-                outcome: {
-                    threatChange: { ENTROPY: 10 }
-                }
-            }
-        ]
-    },
-    {
-        id: 'evt_broken_sleep',
-        title: "The Broken Sleep Schedule",
-        description: "Midnight scrolling, 3am thoughts, groggy mornings. Your circadian rhythm is screaming.",
-        weight: 12,
-        triggerConditions: {
-            minThreat: { STAGNATION: 30 }
-        },
-        choices: [
-            {
-                id: 'c_reset_sleep',
-                label: "Reset routine",
-                type: 'ACCEPT',
-                outcome: {
-                    grantOperation: {
-                        id: 'op_early_bedtime',
-                        title: "Early Bedtime",
-                        description: "No screens after 10pm. Read a book. Reset your sleep cycle.",
-                        type: 'QUEST',
-                        cost: { CONNECTION: 5 }, // Missing late-night social time
-                        rewards: {
-                            resources: { ORDER: 20 },
-                            threatReduction: { STAGNATION: 15 }
-                        },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 24,
-                    }
-                }
-            },
-            {
-                id: 'c_sleep_weak',
-                label: "Sleep is for the weak",
-                type: 'REJECT',
-                outcome: {
-                    threatChange: { STAGNATION: 12, ENTROPY: 5 }
-                }
-            }
-        ]
-    },
-    {
-        id: 'evt_birthday_forgot',
-        title: "The Birthday You Forgot",
-        description: "Facebook reminded you. You should have remembered on your own.",
-        weight: 10,
-        choices: [
-            {
-                id: 'c_thoughtful_message',
-                label: "Better late than never",
-                type: 'ACCEPT',
-                outcome: {
-                    grantOperation: {
-                        id: 'op_birthday_message',
-                        title: "Thoughtful Message",
-                        description: "Send a genuine, personal birthday message.",
-                        type: 'QUEST',
-                        cost: { INFLUENCE: 5 },
-                        rewards: {
-                            resources: { CONNECTION: 20 },
-                            threatReduction: { SOLITUDE: 10 }
-                        },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 12,
-                    }
-                }
-            },
-            {
-                id: 'c_wont_notice',
-                label: "They won't notice",
-                type: 'REJECT',
-                outcome: {
-                    threatChange: { SOLITUDE: 12 }
-                }
-            }
-        ]
-    },
-
-    // --- OPPORTUNITY EVENTS (Bonus, Windfalls) ---
-    {
-        id: 'evt_investment_tip',
-        title: "Market Opportunity",
-        description: "You spot a trend before it hits the mainstream.",
-        weight: 5, // Rare
-        choices: [
-            {
-                id: 'c_invest',
-                label: "Investigate",
-                type: 'ACCEPT',
-                outcome: {
-                    grantOperation: {
-                        id: 'op_market_research',
-                        title: "Market Research",
-                        description: "Deep dive into the data to verify the trend.",
-                        type: 'QUEST',
-                        cost: { ORDER: 10 },
-                        rewards: {
-                            resources: { INFLUENCE: 50 },
-                            threatReduction: { STAGNATION: 5 }
-                        },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 48,
-                    }
-                }
-            },
-            {
-                id: 'c_risk_averse',
-                label: "Too risky",
-                type: 'IGNORE',
-                outcome: {
-                    // No penalty, just missed opportunity
-                }
-            }
-        ]
-    },
-    {
-        id: 'evt_community_project',
-        title: "Community Garden",
-        description: "Neighbors are starting a community project and need hands.",
-        weight: 8,
-        choices: [
-            {
-                id: 'c_volunteer',
-                label: "Volunteer",
-                type: 'ACCEPT',
-                outcome: {
-                    grantOperation: {
-                        id: 'op_volunteer',
-                        title: "Volunteer Work",
-                        description: "Spend the afternoon helping out.",
-                        type: 'QUEST',
-                        cost: { ORDER: 10 }, // Physical effort
-                        rewards: {
-                            resources: { CONNECTION: 30, INFLUENCE: 10 },
-                            threatReduction: { SOLITUDE: 15, ENTROPY: 5 }
-                        },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 72,
-                    }
-                }
-            },
-            {
-                id: 'c_busy',
-                label: "I'm too busy",
-                type: 'REJECT',
-                outcome: {
-                    threatChange: { SOLITUDE: 2 }
+                    threatChange: { SOLITUDE: 5 }
                 }
             }
         ]
@@ -582,6 +695,9 @@ const COMEBACK_EVENTS: GameEvent[] = [
                         rewards: {
                             resources: { CONNECTION: 20 },
                             threatReduction: { SOLITUDE: 25 }
+                        },
+                        penalty: {
+                            threat: { SOLITUDE: 25 }
                         }
                     }
                 }

@@ -45,15 +45,26 @@ export function LedgerView() {
     const deleteOperation = useSocietyStore((s) => s.deleteOperation);
     const editOperation = useSocietyStore((s) => s.editOperation);
 
+    // Tutorial Highlighting
+    const isTutorialActive = useSocietyStore((s) => s.isTutorialActive);
+    const tutorialStep = useSocietyStore((s) => s.tutorialStep);
+    // We import STEPS dynamically or check specific ID string to avoid circular dependency if STEPS involves components (it doesn't, but let's be safe)
+    // Actually STEPS is in TutorialOverlay. importing it here is fine.
+    // But to avoid cyclical imports if TutorialOverlay imports LedgerView (it doesn't), we are safe.
+    // However, Shell imports both. TutorialOverlay imports store.
+
+    const highlightDraft = isTutorialActive && tutorialStep === 4; // Hardcoded index for simplicity or we can check ID properly if we export STEPS safely.
+    // Let's assume we won't import STEPS to avoid potential cycle if refactored later.
+    // 4 is the new "Drafting" step index.
+
     const [isDrafting, setIsDrafting] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
 
     // Form State
     const [draftTitle, setDraftTitle] = useState("");
     const [draftDesc, setDraftDesc] = useState("");
-    const [draftTimeout, setDraftTimeout] = useState<string>(""); // minutes
     const [draftType, setDraftType] = useState<'RITUAL' | 'QUEST' | 'ACTION'>('ACTION');
-    const [draftRecurrence, setDraftRecurrence] = useState<string>(""); // hours
+    const [draftDuration, setDraftDuration] = useState({ days: "", hours: "", minutes: "" }); // Unified duration state
 
     // Thematic Configuration
     const [draftAspect, setDraftAspect] = useState<'STABILITY' | 'COHESION' | 'AMBITION'>('STABILITY');
@@ -64,8 +75,7 @@ export function LedgerView() {
     const resetForm = () => {
         setDraftTitle("");
         setDraftDesc("");
-        setDraftTimeout("");
-        setDraftRecurrence("");
+        setDraftDuration({ days: "", hours: "", minutes: "" });
         setDraftType('ACTION');
         setDraftAspect('STABILITY');
         setDraftTreasury('NEUTRAL');
@@ -77,11 +87,14 @@ export function LedgerView() {
     const handleEditStart = (op: Operation) => {
         setDraftTitle(op.title);
         setDraftDesc(op.description);
-        setDraftType(op.type || 'ACTION'); // Fallback for old data
+        setDraftType(op.type || 'ACTION');
         // For editing, reset config to safe defaults
         setDraftAspect('STABILITY');
         setDraftTreasury('NEUTRAL');
         setDraftImportance('LOW');
+
+        // Reset duration on edit start (user sets new deadline/interval if needed)
+        setDraftDuration({ days: "", hours: "", minutes: "" });
 
         setEditingId(op.id);
         setIsDrafting(true);
@@ -137,16 +150,26 @@ export function LedgerView() {
             cost: Object.keys(cost).length > 0 ? cost : undefined
         };
 
+        // Calculate total duration in milliseconds
+        const d = parseInt(draftDuration.days || "0");
+        const h = parseInt(draftDuration.hours || "0");
+        const m = parseInt(draftDuration.minutes || "0");
+        const totalMs = ((d * 24 * 60) + (h * 60) + m) * 60 * 1000;
+
         // Logic for specific types (Type overrides or additions)
-        if (draftType === 'QUEST' && draftTimeout) {
-            updates.expiresAt = Date.now() + (parseInt(draftTimeout) * 60 * 1000);
+        if (draftType === 'QUEST') {
+            // Default to 1 hour if valid duration not provided
+            const duration = totalMs > 0 ? totalMs : (60 * 60 * 1000);
+            updates.expiresAt = Date.now() + duration;
             updates.penalty = { threat: rewards.threatReduction ? { ...rewards.threatReduction } : undefined };
         } else {
             updates.expiresAt = undefined;
         }
 
-        if (draftType === 'RITUAL' && draftRecurrence) {
-            updates.recurrenceInterval = parseInt(draftRecurrence) * 60 * 60 * 1000;
+        if (draftType === 'RITUAL') {
+            // Default to 24 hours if valid duration not provided
+            const interval = totalMs > 0 ? totalMs : (24 * 60 * 60 * 1000);
+            updates.recurrenceInterval = interval;
             updates.penalty = { threat: rewards.threatReduction ? { ...rewards.threatReduction } : undefined };
         } else {
             updates.recurrenceInterval = undefined;
@@ -167,7 +190,7 @@ export function LedgerView() {
     };
 
     return (
-        <div className="h-full flex flex-col space-y-4">
+        <div className="flex flex-col space-y-4">
             <header className="flex items-center justify-between border-b border-border/50 pb-4">
                 <div>
                     <h2 className="text-3xl font-serif text-primary">The Ledger</h2>
@@ -179,7 +202,7 @@ export function LedgerView() {
                         resetForm();
                         setIsDrafting(!isDrafting);
                     }}
-                    className="flex items-center space-x-2 bg-primary/10 text-primary border border-primary/50 px-4 py-2 rounded hover:bg-primary/20 transition-colors text-sm font-semibold uppercase tracking-wider"
+                    className={`flex items-center space-x-2 bg-primary/10 text-primary border border-primary/50 px-4 py-2 rounded hover:bg-primary/20 transition-colors text-sm font-semibold uppercase tracking-wider ${highlightDraft ? 'z-[2000] relative ring-2 ring-primary shadow-[0_0_50px_rgba(0,0,0,0.8)]' : ''}`}
                 >
                     <Plus className="size-4" />
                     <span>{isDrafting ? "Cancel" : "Draft Decree"}</span>
@@ -218,36 +241,28 @@ export function LedgerView() {
                                     <Shield className="size-3" /> Aspect
                                 </label>
                                 <div className="flex flex-col gap-2 h-full">
-                                    <button
-                                        type="button"
-                                        onClick={() => setDraftAspect('STABILITY')}
-                                        className={`p-2 rounded border text-xs font-bold uppercase transition-all flex items-center justify-between group ${draftAspect === 'STABILITY' ? 'bg-primary/20 border-primary text-primary' : 'border-white/5 text-muted-foreground hover:bg-white/5 hover:border-white/10'}`}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <Shield className={`size-3 ${draftAspect === 'STABILITY' ? 'fill-primary/20' : ''}`} />
-                                            <span>Stability</span>
-                                        </div>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setDraftAspect('COHESION')}
-                                        className={`p-2 rounded border text-xs font-bold uppercase transition-all flex items-center justify-between group ${draftAspect === 'COHESION' ? 'bg-primary/20 border-primary text-primary' : 'border-white/5 text-muted-foreground hover:bg-white/5 hover:border-white/10'}`}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <Users className={`size-3 ${draftAspect === 'COHESION' ? 'fill-primary/20' : ''}`} />
-                                            <span>Cohesion</span>
-                                        </div>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setDraftAspect('AMBITION')}
-                                        className={`p-2 rounded border text-xs font-bold uppercase transition-all flex items-center justify-between group ${draftAspect === 'AMBITION' ? 'bg-primary/20 border-primary text-primary' : 'border-white/5 text-muted-foreground hover:bg-white/5 hover:border-white/10'}`}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <Crown className={`size-3 ${draftAspect === 'AMBITION' ? 'fill-primary/20' : ''}`} />
-                                            <span>Ambition</span>
-                                        </div>
-                                    </button>
+                                    {([
+                                        { id: 'STABILITY', icon: Shield, label: 'Stability', desc: 'Prioritizes Order & Entropy reduction.' },
+                                        { id: 'COHESION', icon: Users, label: 'Cohesion', desc: 'Prioritizes Connection & Solitude reduction.' },
+                                        { id: 'AMBITION', icon: Crown, label: 'Ambition', desc: 'Focuses on Stagnation reduction & generic growth.' }
+                                    ] as const).map(aspect => (
+                                        <button
+                                            key={aspect.id}
+                                            type="button"
+                                            onClick={() => setDraftAspect(aspect.id)}
+                                            className={`relative p-2 rounded border text-xs font-bold uppercase transition-all flex items-center justify-between group/btn ${draftAspect === aspect.id ? 'bg-primary/20 border-primary text-primary' : 'border-white/5 text-muted-foreground hover:bg-white/5 hover:border-white/10'}`}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <aspect.icon className={`size-3 ${draftAspect === aspect.id ? 'fill-primary/20' : ''}`} />
+                                                <span>{aspect.label}</span>
+                                            </div>
+
+                                            {/* Hover Tooltip */}
+                                            <div className="absolute left-0 -top-10 bg-black border border-white/20 text-white text-[10px] p-2 rounded w-48 opacity-0 group-hover/btn:opacity-100 pointer-events-none transition-opacity z-50 shadow-xl">
+                                                {aspect.desc}
+                                            </div>
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
 
@@ -257,30 +272,26 @@ export function LedgerView() {
                                     <Coins className="size-3" /> Treasury
                                 </label>
                                 <div className="flex flex-col gap-2 h-full">
-                                    <button
-                                        type="button"
-                                        onClick={() => setDraftTreasury('YIELD')}
-                                        className={`p-2 rounded border text-xs font-bold uppercase transition-all flex items-center justify-between ${draftTreasury === 'YIELD' ? 'bg-green-500/20 border-green-500 text-green-500' : 'border-white/5 text-muted-foreground hover:bg-white/5 hover:border-white/10'}`}
-                                    >
-                                        <span>Yield</span>
-                                        {draftTreasury === 'YIELD' && <div className="size-1.5 rounded-full bg-green-500 shadow-[0_0_5px_currentColor]" />}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setDraftTreasury('GRANT')}
-                                        className={`p-2 rounded border text-xs font-bold uppercase transition-all flex items-center justify-between ${draftTreasury === 'GRANT' ? 'bg-red-500/20 border-red-500 text-red-500' : 'border-white/5 text-muted-foreground hover:bg-white/5 hover:border-white/10'}`}
-                                    >
-                                        <span>Grant</span>
-                                        {draftTreasury === 'GRANT' && <div className="size-1.5 rounded-full bg-red-500 shadow-[0_0_5px_currentColor]" />}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setDraftTreasury('NEUTRAL')}
-                                        className={`p-2 rounded border text-xs font-bold uppercase transition-all flex items-center justify-between ${draftTreasury === 'NEUTRAL' ? 'bg-primary/20 border-primary text-primary' : 'border-white/5 text-muted-foreground hover:bg-white/5 hover:border-white/10'}`}
-                                    >
-                                        <span>Neutral</span>
-                                        {draftTreasury === 'NEUTRAL' && <div className="size-1.5 rounded-full bg-primary shadow-[0_0_5px_currentColor]" />}
-                                    </button>
+                                    {([
+                                        { id: 'YIELD', label: 'Yield', color: 'green-500', desc: 'Generates Influence upon completion.' },
+                                        { id: 'GRANT', label: 'Grant', color: 'red-500', desc: 'Costs Influence to perform (Simulates spending).' },
+                                        { id: 'NEUTRAL', label: 'Neutral', color: 'primary', desc: 'No Influence cost or gain.' }
+                                    ] as const).map(t => (
+                                        <button
+                                            key={t.id}
+                                            type="button"
+                                            onClick={() => setDraftTreasury(t.id as any)}
+                                            className={`relative p-2 rounded border text-xs font-bold uppercase transition-all flex items-center justify-between group/btn ${draftTreasury === t.id ? (t.id === 'YIELD' ? 'bg-green-500/20 border-green-500 text-green-500' : t.id === 'GRANT' ? 'bg-red-500/20 border-red-500 text-red-500' : 'bg-primary/20 border-primary text-primary') : 'border-white/5 text-muted-foreground hover:bg-white/5 hover:border-white/10'}`}
+                                        >
+                                            <span>{t.label}</span>
+                                            {draftTreasury === t.id && <div className={`size-1.5 rounded-full bg-${t.color === 'primary' ? 'primary' : t.color} shadow-[0_0_5px_currentColor]`} />}
+
+                                            {/* Hover Tooltip */}
+                                            <div className="absolute left-0 -top-10 bg-black border border-white/20 text-white text-[10px] p-2 rounded w-48 opacity-0 group-hover/btn:opacity-100 pointer-events-none transition-opacity z-50 shadow-xl">
+                                                {t.desc}
+                                            </div>
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
 
@@ -290,88 +301,107 @@ export function LedgerView() {
                                     <AlertCircle className="size-3" /> Importance
                                 </label>
                                 <div className="flex flex-col gap-2 h-full">
-                                    <button
-                                        type="button"
-                                        onClick={() => setDraftImportance('LOW')}
-                                        className={`p-2 rounded border text-xs font-bold uppercase transition-all flex items-center justify-between ${draftImportance === 'LOW' ? 'bg-primary/20 border-primary text-primary' : 'border-white/5 text-muted-foreground hover:bg-white/5 hover:border-white/10'}`}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <span className="bg-white/10 px-1 rounded text-[10px]">1x</span>
-                                            <span>Low</span>
-                                        </div>
-                                        {draftImportance === 'LOW' && <div className="size-1.5 rounded-full bg-primary shadow-[0_0_5px_currentColor]" />}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setDraftImportance('MEDIUM')}
-                                        className={`p-2 rounded border text-xs font-bold uppercase transition-all flex items-center justify-between ${draftImportance === 'MEDIUM' ? 'bg-primary/20 border-primary text-primary' : 'border-white/5 text-muted-foreground hover:bg-white/5 hover:border-white/10'}`}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <span className="bg-white/10 px-1 rounded text-[10px]">2x</span>
-                                            <span>Medium</span>
-                                        </div>
-                                        {draftImportance === 'MEDIUM' && <div className="size-1.5 rounded-full bg-primary shadow-[0_0_5px_currentColor]" />}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setDraftImportance('HIGH')}
-                                        className={`p-2 rounded border text-xs font-bold uppercase transition-all flex items-center justify-between ${draftImportance === 'HIGH' ? 'bg-primary/20 border-primary text-primary' : 'border-white/5 text-muted-foreground hover:bg-white/5 hover:border-white/10'}`}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <span className="bg-white/10 px-1 rounded text-[10px]">3x</span>
-                                            <span>High</span>
-                                        </div>
-                                        {draftImportance === 'HIGH' && <div className="size-1.5 rounded-full bg-primary shadow-[0_0_5px_currentColor]" />}
-                                    </button>
+                                    {([
+                                        { id: 'LOW', label: 'Low', mult: '1x', desc: 'Standard rewards and efficiency.' },
+                                        { id: 'MEDIUM', label: 'Medium', mult: '2x', desc: 'Double rewards. Good for significant tasks.' },
+                                        { id: 'HIGH', label: 'High', mult: '3x', desc: 'Triple rewards. Reserved for critical operations.' }
+                                    ] as const).map(imp => (
+                                        <button
+                                            key={imp.id}
+                                            type="button"
+                                            onClick={() => setDraftImportance(imp.id as any)}
+                                            className={`relative p-2 rounded border text-xs font-bold uppercase transition-all flex items-center justify-between group/btn ${draftImportance === imp.id ? 'bg-primary/20 border-primary text-primary' : 'border-white/5 text-muted-foreground hover:bg-white/5 hover:border-white/10'}`}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <span className="bg-white/10 px-1 rounded text-[10px]">{imp.mult}</span>
+                                                <span>{imp.label}</span>
+                                            </div>
+                                            {draftImportance === imp.id && <div className="size-1.5 rounded-full bg-primary shadow-[0_0_5px_currentColor]" />}
+
+                                            {/* Hover Tooltip */}
+                                            <div className="absolute right-0 -top-10 bg-black border border-white/20 text-white text-[10px] p-2 rounded w-48 opacity-0 group-hover/btn:opacity-100 pointer-events-none transition-opacity z-50 shadow-xl">
+                                                {imp.desc}
+                                            </div>
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* Type Selector */}
-                    <div className="space-y-2">
+                    <div className="space-y-4">
                         <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Operation Type</label>
-                        <div className="flex gap-4 py-2">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {(['ACTION', 'RITUAL', 'QUEST'] as const).map(t => (
-                                <label key={t} className="flex items-center gap-2 cursor-pointer group">
-                                    <input
-                                        type="radio"
-                                        name="type"
-                                        value={t}
-                                        checked={draftType === t}
-                                        onChange={() => setDraftType(t)}
-                                        className="accent-primary"
-                                    />
-                                    <span className="text-xs font-bold text-muted-foreground group-hover:text-primary transition-colors">{t}</span>
+                                <label key={t} className={`flex flex-col gap-2 p-3 rounded-lg border cursor-pointer transition-all group ${draftType === t ? 'bg-primary/10 border-primary shadow-[0_0_15px_rgba(var(--primary),0.2)]' : 'bg-black/20 border-white/5 hover:bg-white/5 hover:border-white/10'}`}>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="radio"
+                                            name="type"
+                                            value={t}
+                                            checked={draftType === t}
+                                            onChange={() => setDraftType(t)}
+                                            className="accent-primary size-4"
+                                        />
+                                        <span className={`text-sm font-bold tracking-wide ${draftType === t ? 'text-primary' : 'text-muted-foreground'}`}>{t}</span>
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground leading-relaxed pl-6 h-0 opacity-0 group-hover:h-auto group-hover:opacity-100 overflow-hidden transition-all duration-300">
+                                        {t === 'ACTION' && "One-time immediate effect. Good for quick adjustments."}
+                                        {t === 'RITUAL' && "Recurring maintenance. Must be performed regularly or threats increase."}
+                                        {t === 'QUEST' && "High-stakes, single-use objective. Complete before deadline for massive rewards."}
+                                    </p>
                                 </label>
                             ))}
                         </div>
                     </div>
 
                     {/* Conditional Fields */}
-                    {draftType === 'QUEST' && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground border-b border-border p-2 bg-yellow-900/10 rounded">
-                            <Clock className="size-4 text-yellow-500" />
-                            <input
-                                type="number"
-                                placeholder="Deadline (minutes from now)..."
-                                className="bg-transparent focus:outline-none w-full placeholder:text-yellow-500/50 text-yellow-500"
-                                value={draftTimeout}
-                                onChange={e => setDraftTimeout(e.target.value)}
-                            />
-                        </div>
-                    )}
-
-                    {draftType === 'RITUAL' && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground border-b border-border p-2 bg-blue-900/10 rounded">
-                            <Clock className="size-4 text-blue-500" />
-                            <input
-                                type="number"
-                                placeholder="Recurrence Interval (hours)..."
-                                className="bg-transparent focus:outline-none w-full placeholder:text-blue-500/50 text-blue-500"
-                                value={draftRecurrence}
-                                onChange={e => setDraftRecurrence(e.target.value)}
-                            />
+                    {(draftType === 'QUEST' || draftType === 'RITUAL') && (
+                        <div className={`flex flex-col gap-2 text-sm text-muted-foreground border-b border-border p-2 rounded ${draftType === 'QUEST' ? 'bg-yellow-900/10' : 'bg-blue-900/10'}`}>
+                            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+                                <Clock className={`size-4 ${draftType === 'QUEST' ? 'text-yellow-500' : 'text-blue-500'}`} />
+                                <span className={draftType === 'QUEST' ? 'text-yellow-500' : 'text-blue-500'}>
+                                    {draftType === 'QUEST' ? 'Deadline Duration' : 'Recurrence Interval'}
+                                </span>
+                            </div>
+                            <div className="flex gap-4">
+                                <div className="flex-1 flex flex-col gap-1">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        placeholder="0"
+                                        className={`bg-black/20 border border-white/5 p-2 rounded text-center focus:outline-none focus:border-primary ${draftType === 'QUEST' ? 'text-yellow-500' : 'text-blue-500'}`}
+                                        value={draftDuration.days}
+                                        onChange={e => setDraftDuration({ ...draftDuration, days: e.target.value })}
+                                    />
+                                    <span className="text-[10px] text-center uppercase text-muted-foreground">Days</span>
+                                </div>
+                                <div className="flex-1 flex flex-col gap-1">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="23"
+                                        placeholder="0"
+                                        className={`bg-black/20 border border-white/5 p-2 rounded text-center focus:outline-none focus:border-primary ${draftType === 'QUEST' ? 'text-yellow-500' : 'text-blue-500'}`}
+                                        value={draftDuration.hours}
+                                        onChange={e => setDraftDuration({ ...draftDuration, hours: e.target.value })}
+                                    />
+                                    <span className="text-[10px] text-center uppercase text-muted-foreground">Hours</span>
+                                </div>
+                                <div className="flex-1 flex flex-col gap-1">
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="59"
+                                        placeholder="0"
+                                        className={`bg-black/20 border border-white/5 p-2 rounded text-center focus:outline-none focus:border-primary ${draftType === 'QUEST' ? 'text-yellow-500' : 'text-blue-500'}`}
+                                        value={draftDuration.minutes}
+                                        onChange={e => setDraftDuration({ ...draftDuration, minutes: e.target.value })}
+                                    />
+                                    <span className="text-[10px] text-center uppercase text-muted-foreground">Minutes</span>
+                                </div>
+                            </div>
                         </div>
                     )}
 
@@ -384,7 +414,7 @@ export function LedgerView() {
                 </form>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto pr-2 pb-20">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-20">
                 {/* Custom Protocols First */}
                 {customOperations.map(op => (
                     <div key={op.id} className="relative group hover:z-10 bg-black/20 rounded-lg">
