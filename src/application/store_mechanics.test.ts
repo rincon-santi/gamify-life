@@ -40,8 +40,8 @@ describe('useSocietyStore - Mechanics', () => {
         expect(useSocietyStore.getState().customOperations).toHaveLength(0);
 
         // Verify Penalty
-        // Reset sets Entropy to 10. Initial + 20 = 30.
-        expect(useSocietyStore.getState().threats.ENTROPY).toBe(30);
+        // Reset sets Entropy to 0. Initial + 20 = 20.
+        expect(useSocietyStore.getState().threats.ENTROPY).toBe(20);
 
         // Verify History
         const history = useSocietyStore.getState().history;
@@ -93,8 +93,8 @@ describe('useSocietyStore - Mechanics', () => {
             deleteOperation('action_1');
         });
 
-        // Entropy should remain at initial 10
-        expect(useSocietyStore.getState().threats.ENTROPY).toBe(10);
+        // Entropy should remain at initial 0
+        expect(useSocietyStore.getState().threats.ENTROPY).toBe(0);
 
         // History shouldn't say Abandoned
         const history = useSocietyStore.getState().history;
@@ -220,8 +220,8 @@ describe('useSocietyStore - Mechanics', () => {
         // 4. Verify quest is removed
         expect(useSocietyStore.getState().customOperations).toHaveLength(0);
 
-        // 5. Verify penalty was NOT applied (should still be 10 from reset)
-        expect(useSocietyStore.getState().threats.ENTROPY).toBe(10);
+        // 5. Verify penalty was NOT applied (should still be 0 from reset)
+        expect(useSocietyStore.getState().threats.ENTROPY).toBe(0);
 
         // 6. Verify rewards WERE applied
         expect(useSocietyStore.getState().resources.INFLUENCE).toBe(60); // 10 + 50

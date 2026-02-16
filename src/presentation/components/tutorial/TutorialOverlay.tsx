@@ -72,7 +72,7 @@ export const STEPS: TutorialStep[] = [
                                 title: 'Prove Your Worth',
                                 description: 'The darkness recedes, but you must solidify your stance. Complete this quest.',
                                 type: 'QUEST',
-                                expiresAt: Date.now() + 1000 * 60 * 30, // 30 mins
+                                duration: 1000 * 60 * 30, // 30 mins
                                 rewards: { resources: { INFLUENCE: 10 } }
                             }
                         }

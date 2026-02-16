@@ -151,6 +151,7 @@ export function LedgerView() {
             // Default to 1 hour if valid duration not provided
             const duration = totalMs > 0 ? totalMs : (60 * 60 * 1000);
             updates.expiresAt = Date.now() + duration;
+            updates.duration = duration;
             updates.penalty = { threat: rewards.threatReduction ? { ...rewards.threatReduction } : undefined };
         } else {
             updates.expiresAt = undefined;
