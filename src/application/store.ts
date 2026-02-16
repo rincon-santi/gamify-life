@@ -106,6 +106,7 @@ interface SocietyState {
     addThreat: (type: ThreatType, amount: number) => void;
     applyPenalty: (penalty: { threat?: Partial<Record<ThreatType, number>>, resource?: Partial<Record<ResourceType, number>> }, context?: string) => void;
     executeOperation: (operation: Operation) => void;
+    failOperation: (operation: Operation) => void;
     createOperation: (operation: Operation) => void;
     deleteOperation: (id: string) => void;
     removeOperation: (id: string) => void;
@@ -248,19 +249,44 @@ export const useSocietyStore = create<SocietyState>()(
 
                         // [NEW] Consequences for abandoning Quests/Rituals
                         if (op.type === 'QUEST' || op.type === 'RITUAL') {
-                            if (op.penalty?.threat) {
-                                const unapplied = applySafeThreatChange(state.threats, op.penalty.threat);
+                            if (op.penalty) {
+                                const unappliedThreats: Partial<Record<ThreatType, number>> = {};
+                                const unappliedResources: Partial<Record<ResourceType, number>> = {};
+
+                                if (op.penalty.threat) {
+                                    const unapplied = applySafeThreatChange(state.threats, op.penalty.threat);
+                                    Object.assign(unappliedThreats, unapplied);
+                                }
+
+                                if (op.penalty.resource) {
+                                    const unapplied = applyResourcePenalty(state.resources, op.penalty.resource);
+                                    Object.assign(unappliedResources, unapplied);
+                                }
 
                                 // Log the applied penalties
                                 state.history.push(createHistoryEntry(`Abandoned ${op.type}: ${op.title}. Consequences applied.`, 'TASK'));
 
                                 // Log what couldn't be applied
-                                if (Object.keys(unapplied).length > 0) {
-                                    const unappliedText = Object.entries(unapplied)
-                                        .map(([t, v]) => `${t}: ${v.toFixed(1)}`)
-                                        .join(', ');
+                                const unappliedCount = Object.keys(unappliedThreats).length + Object.keys(unappliedResources).length;
+                                if (unappliedCount > 0) {
+                                    const parts: string[] = [];
+
+                                    if (Object.keys(unappliedThreats).length > 0) {
+                                        const threatText = Object.entries(unappliedThreats)
+                                            .map(([t, v]) => `${t}: ${v.toFixed(1)}`)
+                                            .join(', ');
+                                        parts.push(`Threats: ${threatText}`);
+                                    }
+
+                                    if (Object.keys(unappliedResources).length > 0) {
+                                        const resourceText = Object.entries(unappliedResources)
+                                            .map(([r, v]) => `${r}: ${v.toFixed(1)}`)
+                                            .join(', ');
+                                        parts.push(`Resources: ${resourceText}`);
+                                    }
+
                                     state.history.push(createHistoryEntry(
-                                        `Some penalties couldn't be fully applied (already at limits): ${unappliedText}`,
+                                        `Some penalties couldn't be fully applied (already at limits): ${parts.join('; ')}`,
                                         'TASK'
                                     ));
                                 }
@@ -402,6 +428,66 @@ export const useSocietyStore = create<SocietyState>()(
 
                     // 5. Log
                     state.history.push(createHistoryEntry(`Executed: ${operation.title}`, 'TASK'));
+                }),
+
+            failOperation: (operation: Operation) =>
+                set((state) => {
+                    // 1. Apply Penalty
+                    if (operation.penalty) {
+                        const unappliedThreats: Partial<Record<ThreatType, number>> = {};
+                        const unappliedResources: Partial<Record<ResourceType, number>> = {};
+
+                        if (operation.penalty.threat) {
+                            const unapplied = applySafeThreatChange(state.threats, operation.penalty.threat);
+                            Object.assign(unappliedThreats, unapplied);
+                        }
+
+                        if (operation.penalty.resource) {
+                            const unapplied = applyResourcePenalty(state.resources, operation.penalty.resource);
+                            Object.assign(unappliedResources, unapplied);
+                        }
+
+                        // Log what couldn't be applied
+                        const unappliedCount = Object.keys(unappliedThreats).length + Object.keys(unappliedResources).length;
+                        if (unappliedCount > 0) {
+                            const parts: string[] = [];
+
+                            if (Object.keys(unappliedThreats).length > 0) {
+                                const threatText = Object.entries(unappliedThreats)
+                                    .map(([t, v]) => `${t}: ${v.toFixed(1)}`)
+                                    .join(', ');
+                                parts.push(`Threats: ${threatText}`);
+                            }
+
+                            if (Object.keys(unappliedResources).length > 0) {
+                                const resourceText = Object.entries(unappliedResources)
+                                    .map(([r, v]) => `${r}: ${v.toFixed(1)}`)
+                                    .join(', ');
+                                parts.push(`Resources: ${resourceText}`);
+                            }
+
+                            state.history.push(createHistoryEntry(
+                                `Some penalties for failing ${operation.title} couldn't be fully applied (already at limits): ${parts.join('; ')}`,
+                                'TASK'
+                            ));
+                        }
+                    }
+
+                    // 2. Log failure
+                    state.history.push(createHistoryEntry(`Failed ${operation.type}: ${operation.title}`, 'TASK'));
+
+                    // 3. Handle cleanup/reset
+                    if (state.customOperations) {
+                        const idx = state.customOperations.findIndex(o => o.id === operation.id);
+                        if (idx !== -1) {
+                            if (operation.type === 'QUEST') {
+                                state.customOperations.splice(idx, 1);
+                            } else {
+                                // For RITUAL or others, reset the timer/cooldown
+                                state.customOperations[idx].lastCompleted = Date.now();
+                            }
+                        }
+                    }
                 }),
 
             tick: () =>

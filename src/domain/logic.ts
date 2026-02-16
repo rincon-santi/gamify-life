@@ -32,6 +32,7 @@ export interface Operation {
     lastCompleted?: number; // Timestamp
     penalty?: {
         threat?: Partial<Record<ThreatType, number>>;
+        resource?: Partial<Record<ResourceType, number>>;
     };
     isCustom?: boolean;
     createdAt?: number; // Timestamp
