@@ -36,5 +36,6 @@ export interface Operation {
     isCustom?: boolean;
     createdAt?: number; // Timestamp
     expiresAt?: number; // Timestamp
+    duration?: number; // Duration in milliseconds
     type: OperationType;
 }

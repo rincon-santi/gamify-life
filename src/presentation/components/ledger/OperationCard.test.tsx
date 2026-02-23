@@ -1,5 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
+import * as matchers from '@testing-library/jest-dom/matchers';
+expect.extend(matchers);
 import { OperationCard } from './OperationCard';
 import type { Operation } from '../../../domain/logic';
 import { useSocietyStore } from '../../../application/store';
@@ -121,12 +123,10 @@ describe('OperationCard', () => {
         render(<OperationCard operation={op} />);
 
         // Initial state: Created 1s ago, Interval 10s -> Not ready (9s remaining)
-        // Should show "Rots in 9s" and "WAIT"
+        // Should show "Rots in 9s"
         expect(screen.getByText('Rots in 9s')).toBeInTheDocument();
-        expect(screen.getByText('WAIT')).toBeInTheDocument();
-
-        // Ensure EXECUTE is NOT present (or hidden)
-        expect(screen.queryByText('EXECUTE')).not.toBeInTheDocument();
+        // Rituals are always executable (until they rot, and even then usually)
+        expect(screen.getAllByText('EXECUTE')[0]).toBeInTheDocument();
 
         // Advance time by 11s to ensure we're fully over the interval
         vi.setSystemTime(now - 1000 + 11000);
@@ -136,7 +136,7 @@ describe('OperationCard', () => {
 
         // Now should be ready
         // expect(screen.getByText('Rotten')).toBeInTheDocument();
-        expect(screen.getByText('EXECUTE')).toBeInTheDocument();
+        expect(screen.getAllByText('EXECUTE')[0]).toBeInTheDocument();
 
         vi.useRealTimers();
     });

@@ -309,33 +309,21 @@ export const useSocietyStore = create<SocietyState>()(
                     // 1. Grant Operation (Quest)
                     if (outcome.grantOperation) {
                         if (!state.customOperations) state.customOperations = [];
-                        // Ensure unique ID if needed, but static IDs are fine for unique quests
-                        // Maybe append timestamp to ID to allow repeats?
-                        // For now keep static. 
-                        state.customOperations.push({
-                            ...outcome.grantOperation,
-                            createdAt: Date.now(),
-                            // If it expires, setting relative time to absolute
-                            expiresAt: outcome.grantOperation.expiresAt // logic in domain already sets absolute or we need to fix it?
-                            // Domain Logic used Date.now(). If we import generic object, Date.now() is fixed at import time.
-                            // FIX: generic objects shouldn't have pre-computed Date.now().
-                            // We will fix this in logic below or changing domain.
-                            // For now, let's assume we re-calc times.
-                        });
-                        // Re-calc expiry if it was set to a number (duration) vs absolute
-                        // In domain I wrote `expiresAt: Date.now() + ...`. That value is static!
-                        // I need to change domain to use `duration` instead of `expiresAt`.
-                        // For this iteration, I will override it here.
-                        const op = state.customOperations[state.customOperations.length - 1];
-                        if (outcome.grantOperation.expiresAt) {
-                            // It's a static timestamp from when module loaded. WRONG.
-                            // Let's assume the value in domain was "Duration in ms" actually, or just a placeholder.
-                            // Let's fix this in domain later. For now, let's hardcode a fix:
-                            // If the domain 'expiresAt' is massive, it was intended as absolute.
-                            // But since it's stale, we should treat it as relative?
-                            // Let's just say specific Quests default to 2h for now if not specified.
-                            op.expiresAt = Date.now() + (1000 * 60 * 60 * 2);
+
+                        const now = Date.now();
+                        const opTemplate = outcome.grantOperation;
+
+                        // Calculate expiration dynamically
+                        let expiresAt = opTemplate.expiresAt;
+                        if (opTemplate.duration) {
+                            expiresAt = now + opTemplate.duration;
                         }
+
+                        state.customOperations.push({
+                            ...opTemplate,
+                            createdAt: now,
+                            expiresAt: expiresAt
+                        });
                     }
 
                     // 2. Resource/Threat Changes

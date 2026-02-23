@@ -69,7 +69,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { ORDER: 5 }
                         },
                         // Generic duration: 4 hours
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 4,
+                        duration: 1000 * 60 * 60 * 4,
                         penalty: {
                             threat: { ENTROPY: 5 }
                         }
@@ -110,7 +110,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { ORDER: 15 },
                             threatReduction: { ENTROPY: 10, STAGNATION: 5 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 2,
+                        duration: 1000 * 60 * 60 * 2,
                         penalty: {
                             threat: { ENTROPY: 10 }
                         }
@@ -152,7 +152,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { ORDER: 20 },
                             threatReduction: { ENTROPY: 20 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 4,
+                        duration: 1000 * 60 * 60 * 4,
                         penalty: {
                             threat: { ENTROPY: 25 }
                         }
@@ -193,7 +193,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { ORDER: 15 },
                             threatReduction: { ENTROPY: 10 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 24,
+                        duration: 1000 * 60 * 60 * 24,
                         penalty: {
                             threat: { ENTROPY: 5 }
                         }
@@ -234,7 +234,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { ORDER: 10 },
                             threatReduction: { ENTROPY: 15 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 2,
+                        duration: 1000 * 60 * 60 * 2,
                         penalty: {
                             threat: { ENTROPY: 10 }
                         }
@@ -275,7 +275,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { ORDER: 15 },
                             threatReduction: { ENTROPY: 10 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 24,
+                        duration: 1000 * 60 * 60 * 24,
                         penalty: {
                             threat: { ENTROPY: 5 }
                         }
@@ -318,7 +318,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             threatReduction: { ENTROPY: 30 } // Increased reduction
                         },
                         // 6 hours
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 6,
+                        duration: 1000 * 60 * 60 * 6,
                         penalty: {
                             threat: { ENTROPY: 10 }
                         }
@@ -361,7 +361,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { ORDER: 10, INFLUENCE: 5 },
                             threatReduction: { STAGNATION: 10 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 1,
+                        duration: 1000 * 60 * 60 * 1,
                         penalty: {
                             threat: { STAGNATION: 5 }
                         }
@@ -402,7 +402,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { INFLUENCE: 10 },
                             threatReduction: { STAGNATION: 15 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 6,
+                        duration: 1000 * 60 * 60 * 6,
                         penalty: {
                             threat: { STAGNATION: 10 }
                         }
@@ -443,7 +443,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { ORDER: 10 },
                             threatReduction: { STAGNATION: 10 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 2,
+                        duration: 1000 * 60 * 60 * 2,
                         penalty: {
                             threat: { STAGNATION: 10 }
                         }
@@ -485,7 +485,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { INFLUENCE: 10, CONNECTION: 5 },
                             threatReduction: { STAGNATION: 20 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 12,
+                        duration: 1000 * 60 * 60 * 12,
                         penalty: {
                             threat: { STAGNATION: 10 }
                         }
@@ -528,7 +528,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { CONNECTION: 10 },
                             threatReduction: { SOLITUDE: 10 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 4,
+                        duration: 1000 * 60 * 60 * 4,
                         penalty: {
                             threat: { SOLITUDE: 10 }
                         }
@@ -569,7 +569,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { CONNECTION: 15 },
                             threatReduction: { SOLITUDE: 15 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 6,
+                        duration: 1000 * 60 * 60 * 6,
                         penalty: {
                             threat: { SOLITUDE: 15 }
                         }
@@ -610,7 +610,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { CONNECTION: 15 },
                             threatReduction: { SOLITUDE: 10 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 4,
+                        duration: 1000 * 60 * 60 * 4,
                         penalty: {
                             threat: { SOLITUDE: 5 }
                         }
@@ -651,7 +651,7 @@ const GENERIC_EVENTS: GameEvent[] = [
                             resources: { CONNECTION: 25 },
                             threatReduction: { SOLITUDE: 20 }
                         },
-                        expiresAt: Date.now() + 1000 * 60 * 60 * 48,
+                        duration: 1000 * 60 * 60 * 48,
                         penalty: {
                             threat: { SOLITUDE: 10 }
                         }
